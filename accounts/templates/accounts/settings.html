@@ -1,37 +1,153 @@
 {% extends "base.html" %}
-{% block title %}Settings{% endblock %}
-{% block content %}
-<div class="settings-shell">
-  <div class="card settings-card">
-    <div class="section-heading compact">
-      <h2>Settings</h2>
-      <a href="{% url 'accounts:profile' %}" class="btn btn-secondary">Back to Profile</a>
-    </div>
+{% block title %}Settings — TaskNest{% endblock %}
 
-    <form method="post">
-      {% csrf_token %}
-      <div class="toggle-row">
-        {{ form.dark_mode }}
-        <label class="form-check-label" for="{{ form.dark_mode.id_for_label }}">Dark mode</label>
-      </div>
-      <div class="toggle-row">
-        {{ form.email_notifications }}
-        <label class="form-check-label" for="{{ form.email_notifications.id_for_label }}">Email notifications</label>
-      </div>
-      <div class="field">
-        <label for="{{ form.timezone.id_for_label }}">Timezone</label>
-        {{ form.timezone }}
-        {% if form.timezone.errors %}<ul class="errorlist">{% for error in form.timezone.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
-      </div>
-      {% if form.non_field_errors %}<ul class="errorlist">{% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
-      <div class="btn-row">
-        <button type="submit" class="btn btn-primary">Save Settings</button>
-        <a href="{% url 'accounts:profile' %}" class="btn btn-secondary">Back</a>
-      </div>
+{% block content %}
+<section class="page-head">
+    <div class="page-head-text">
+        <p class="eyebrow">Preferences</p>
+        <h1>Settings</h1>
+        <p class="page-sub">Tune TaskNest to the way you actually work.</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-secondary" href="{% url 'accounts:profile' %}">Back to profile</a>
+    </div>
+</section>
+
+<div class="settings-layout">
+    <form method="post" class="settings-form">
+        {% csrf_token %}
+
+        <section class="panel settings-section">
+            <header class="panel-head">
+                <div>
+                    <p class="eyebrow">Appearance</p>
+                    <h2>Colour theme</h2>
+                </div>
+            </header>
+            <div class="theme-choices">
+                <label class="theme-choice {% if not profile.dark_mode %}is-active{% endif %}">
+                    <input type="radio" name="theme" value="light" {% if not profile.dark_mode %}checked{% endif %} data-theme-choice="light">
+                    <span class="theme-preview theme-light">
+                        <span class="theme-preview-bar"></span>
+                        <span class="theme-preview-card"></span>
+                    </span>
+                    <span class="theme-choice-label">Light</span>
+                </label>
+                <label class="theme-choice {% if profile.dark_mode %}is-active{% endif %}">
+                    <input type="radio" name="theme" value="dark" {% if profile.dark_mode %}checked{% endif %} data-theme-choice="dark">
+                    <span class="theme-preview theme-dark">
+                        <span class="theme-preview-bar"></span>
+                        <span class="theme-preview-card"></span>
+                    </span>
+                    <span class="theme-choice-label">Dark</span>
+                </label>
+            </div>
+            <div class="field hidden-field">
+                {{ form.dark_mode }}
+            </div>
+            <p class="helptext">You can also flip the theme from the top bar. Your choice is saved to your account.</p>
+        </section>
+
+        <section class="panel settings-section">
+            <header class="panel-head">
+                <div>
+                    <p class="eyebrow">Notifications</p>
+                    <h2>Stay in the loop</h2>
+                </div>
+            </header>
+            <div class="toggle-row">
+                {{ form.email_notifications }}
+                <label class="form-check-label" for="{{ form.email_notifications.id_for_label }}">Email notifications</label>
+            </div>
+            <p class="helptext">Receive reminders for overdue and due-today tasks. (Email delivery is wired up in production.)</p>
+        </section>
+
+        <section class="panel settings-section">
+            <header class="panel-head">
+                <div>
+                    <p class="eyebrow">Region</p>
+                    <h2>Timezone</h2>
+                </div>
+            </header>
+            <div class="field">
+                <label for="{{ form.timezone.id_for_label }}">Your timezone</label>
+                {{ form.timezone }}
+                {% if form.timezone.errors %}<ul class="errorlist">{% for error in form.timezone.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            <p class="helptext">Deadlines are displayed in this timezone. Change it if you travel or study abroad.</p>
+        </section>
+
+        {% if form.non_field_errors %}
+        <ul class="errorlist">{% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}</ul>
+        {% endif %}
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>
+                Save settings
+            </button>
+            <a class="btn btn-secondary" href="{% url 'accounts:profile' %}">Cancel</a>
+        </div>
     </form>
 
-    <div class="settings-divider"></div>
-    <a href="{% url 'accounts:change_password' %}" class="btn btn-secondary">Change Password</a>
-  </div>
+    <aside class="settings-rail">
+        <section class="panel">
+            <header class="panel-head">
+                <div>
+                    <p class="eyebrow">Account</p>
+                    <h2>Security</h2>
+                </div>
+            </header>
+            <div class="settings-links">
+                <a class="settings-link" href="{% url 'accounts:change_password' %}">
+                    <span class="settings-link-icon"><svg class="icon"><use href="#i-edit"></use></svg></span>
+                    <span class="settings-link-text">
+                        <strong>Change password</strong>
+                        <span>Update your credentials</span>
+                    </span>
+                    <svg class="icon icon-xs"><use href="#i-chevron-right"></use></svg>
+                </a>
+                <form method="post" action="{% url 'accounts:logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="settings-link settings-link-danger">
+                        <span class="settings-link-icon"><svg class="icon"><use href="#i-logout"></use></svg></span>
+                        <span class="settings-link-text">
+                            <strong>Log out</strong>
+                            <span>End this session</span>
+                        </span>
+                        <svg class="icon icon-xs"><use href="#i-chevron-right"></use></svg>
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <section class="panel">
+            <header class="panel-head">
+                <div>
+                    <p class="eyebrow">About</p>
+                    <h2>TaskNest</h2>
+                </div>
+            </header>
+            <p class="muted-text">A calm, deadline-first task manager. Your data is stored per account; timezones and theme are saved with your profile.</p>
+        </section>
+    </aside>
 </div>
+{% endblock %}
+{% block extra_js %}
+<script>
+// Keep the dark_mode checkbox in sync with the visual theme cards.
+(function () {
+    const checkbox = document.querySelector('input[name="dark_mode"]');
+    const choices = document.querySelectorAll('[data-theme-choice]');
+    if (!checkbox || !choices.length) return;
+    choices.forEach((choice) => {
+        choice.addEventListener('change', () => {
+            checkbox.checked = choice.value === 'dark';
+            document.querySelectorAll('.theme-choice').forEach((label) => {
+                label.classList.toggle('is-active', label.contains(choice));
+            });
+        });
+    });
+})();
+</script>
 {% endblock %}

@@ -1,16 +1,31 @@
 {% extends "base.html" %}
 {% block title %}Delete task — TaskNest{% endblock %}
+
 {% block content %}
-<h1>Delete this task?</h1>
-<p class="subtitle">This can't be undone.</p>
-<div class="card">
-    <p style="margin: 0 0 20px;">"<strong>{{ object.title }}</strong>" will be removed from your list.</p>
-    <form method="post">
-        {% csrf_token %}
-        <div class="btn-row">
-            <button type="submit" class="btn btn-danger">Delete task</button>
-            <a href="{% url 'tasks:dashboard' %}" class="btn btn-secondary">Cancel</a>
+<section class="page-head">
+    <div class="page-head-text">
+        <p class="eyebrow">Danger zone</p>
+        <h1>Delete this task?</h1>
+        <p class="page-sub">This can't be undone.</p>
+    </div>
+</section>
+
+<div class="form-layout">
+    <div class="panel delete-card">
+        <div class="delete-icon">
+            <svg class="icon"><use href="#i-trash"></use></svg>
         </div>
-    </form>
+        <h2>“{{ object.title }}”</h2>
+        <p class="muted-text">will be removed from your list. Its steps will go with it.</p>
+        <form method="post" class="delete-actions">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <a class="btn btn-secondary" href="{% url 'tasks:dashboard' %}">Cancel</a>
+            <button type="submit" class="btn btn-danger">
+                <svg class="icon" aria-hidden="true"><use href="#i-trash"></use></svg>
+                Delete task
+            </button>
+        </form>
+    </div>
 </div>
 {% endblock %}

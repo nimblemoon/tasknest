@@ -1,0 +1,15 @@
+{% if messages %}
+<div class="flash-stack" data-flash-stack>
+    {% for message in messages %}
+    <div class="flash flash-{{ message.tags|default:'info' }}" role="status">
+        <span class="flash-icon">
+            <svg class="icon" aria-hidden="true"><use href="#{% if message.tags == 'success' %}i-check{% elif message.tags == 'error' %}i-alert{% else %}i-info{% endif %}"></use></svg>
+        </span>
+        <span class="flash-text">{{ message }}</span>
+        <button type="button" class="flash-close" data-dismiss-flash aria-label="Dismiss notification">
+            <svg class="icon" aria-hidden="true"><use href="#i-x"></use></svg>
+        </button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}

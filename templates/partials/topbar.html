@@ -1,0 +1,35 @@
+<header class="topbar">
+    <div class="topbar-left">
+        <button type="button" class="icon-btn topbar-menu" data-sidebar-open aria-label="Open navigation">
+            <svg class="icon"><use href="#i-menu"></use></svg>
+        </button>
+        <span class="topbar-date">{% now "l, F j" %}</span>
+    </div>
+
+    <form class="global-search" method="get" action="{% url 'tasks:dashboard' %}" role="search">
+        <svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg>
+        <input type="search" name="q" value="{{ search_query|default:'' }}" placeholder="Search tasks, notes, projects…" autocomplete="off" aria-label="Search tasks">
+        <kbd>/</kbd>
+    </form>
+
+    <div class="topbar-actions">
+        <button type="button" class="btn btn-primary btn-sm topbar-new" data-open-dialog="quick-add">
+            <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+            <span>New task</span>
+        </button>
+        <form method="post" action="{% url 'accounts:theme_toggle' %}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <button type="submit" class="icon-btn theme-btn" title="Switch to {% if profile.dark_mode %}light{% else %}dark{% endif %} mode" aria-label="Toggle colour theme">
+                <svg class="icon"><use href="#{% if profile.dark_mode %}i-sun{% else %}i-moon{% endif %}"></use></svg>
+            </button>
+        </form>
+        <a class="avatar avatar-sm topbar-avatar" href="{% url 'accounts:profile' %}" aria-label="Open profile">
+            {% if profile.avatar %}
+                <img src="{{ profile.avatar.url }}" alt="">
+            {% else %}
+                {{ user.username|first|upper }}
+            {% endif %}
+        </a>
+    </div>
+</header>

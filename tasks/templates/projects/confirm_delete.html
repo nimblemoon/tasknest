@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Delete project — TaskNest{% endblock %}
+
+{% block content %}
+<section class="page-head">
+    <div class="page-head-text">
+        <p class="eyebrow">Danger zone</p>
+        <h1>Delete this project?</h1>
+        <p class="page-sub">This can't be undone.</p>
+    </div>
+</section>
+
+<div class="form-layout">
+    <div class="panel delete-card">
+        <div class="delete-icon">
+            <svg class="icon"><use href="#i-trash"></use></svg>
+        </div>
+        <h2>“{{ project.name }}”</h2>
+        <p class="muted-text">
+            {% if task_count %}
+            Its {{ task_count }} task{{ task_count|pluralize }} will be kept, but they'll lose their project label.
+            {% else %}
+            This project has no tasks yet.
+            {% endif %}
+        </p>
+        <form method="post" class="delete-actions">
+            {% csrf_token %}
+            <a class="btn btn-secondary" href="{% url 'tasks:project_detail' project.pk %}">Cancel</a>
+            <button type="submit" class="btn btn-danger">
+                <svg class="icon" aria-hidden="true"><use href="#i-trash"></use></svg>
+                Delete project
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}

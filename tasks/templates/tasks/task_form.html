@@ -1,22 +1,84 @@
 {% extends "base.html" %}
 {% block title %}{{ form_heading }} — TaskNest{% endblock %}
+
 {% block content %}
-<h1>{{ form_heading }}</h1>
-<p class="subtitle">A title, a due date, a priority — that's all it takes.</p>
-<div class="card">
-    <form method="post">
+<section class="page-head">
+    <div class="page-head-text">
+        <p class="eyebrow">Tasks</p>
+        <h1>{{ form_heading }}</h1>
+        <p class="page-sub">{{ form_subtitle }}</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-secondary" href="{% url 'tasks:dashboard' %}">Cancel</a>
+    </div>
+</section>
+
+<div class="form-layout">
+    <form method="post" class="panel form-panel" novalidate>
         {% csrf_token %}
-        {% for field in form %}
+        {% if form.non_field_errors %}
+        <div class="form-errors">{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+        {% endif %}
+
         <div class="field">
-            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-            {{ field }}
-            {% if field.errors %}<ul class="errorlist">{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+            <label for="{{ form.title.id_for_label }}">Title</label>
+            {{ form.title }}
+            {% if form.title.errors %}<ul class="errorlist">{% for error in form.title.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
         </div>
-        {% endfor %}
-        <div class="btn-row">
-            <button type="submit" class="btn btn-primary">Save task</button>
-            <a href="{% url 'tasks:dashboard' %}" class="btn btn-secondary">Cancel</a>
+
+        <div class="field">
+            <label for="{{ form.description.id_for_label }}">Notes</label>
+            {{ form.description }}
+            {% if form.description.errors %}<ul class="errorlist">{% for error in form.description.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+            <div class="helptext">Optional. Links, context, or anything future-you will need.</div>
+        </div>
+
+        <div class="field-grid field-grid-3">
+            <div class="field">
+                <label for="{{ form.project.id_for_label }}">Project</label>
+                {{ form.project }}
+                {% if form.project.errors %}<ul class="errorlist">{% for error in form.project.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            <div class="field">
+                <label for="{{ form.due_date.id_for_label }}">Due date</label>
+                {{ form.due_date }}
+                {% if form.due_date.errors %}<ul class="errorlist">{% for error in form.due_date.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+                <div class="helptext">Leave blank for a task with no deadline.</div>
+            </div>
+            <div class="field">
+                <label for="{{ form.priority.id_for_label }}">Priority</label>
+                {{ form.priority }}
+                {% if form.priority.errors %}<ul class="errorlist">{% for error in form.priority.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>
+                {{ submit_label }}
+            </button>
+            <a class="btn btn-secondary" href="{% url 'tasks:dashboard' %}">Cancel</a>
+            {% if task %}
+            <a class="btn btn-ghost danger" href="{% url 'tasks:delete_task' task.pk %}">Delete task</a>
+            {% endif %}
         </div>
     </form>
+
+    <aside class="form-aside">
+        <section class="panel tip-panel">
+            <header class="panel-head">
+                <div>
+                    <p class="eyebrow">Tip</p>
+                    <h2>Keep it small</h2>
+                </div>
+            </header>
+            <p class="muted-text">A task should fit in a single sitting. If it needs several, split it into steps on the task detail page.</p>
+            <ul class="tip-list">
+                <li><svg class="icon icon-xs"><use href="#i-clock"></use></svg> Set a real due time, not just a date.</li>
+                <li><svg class="icon icon-xs"><use href="#i-flag"></use></svg> Reserve High for things that block other work.</li>
+                <li><svg class="icon icon-xs"><use href="#i-folder"></use></svg> Group related tasks under a project.</li>
+            </ul>
+        </section>
+    </aside>
 </div>
 {% endblock %}

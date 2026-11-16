@@ -1,8 +1,23 @@
 {% extends "base.html" %}
 {% block title %}Profile — TaskNest{% endblock %}
+
 {% block content %}
+<section class="page-head">
+    <div class="page-head-text">
+        <p class="eyebrow">Account</p>
+        <h1>Profile</h1>
+        <p class="page-sub">Your nest, your numbers.</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-secondary" href="{% url 'accounts:settings' %}">
+            <svg class="icon" aria-hidden="true"><use href="#i-settings"></use></svg>
+            Settings
+        </a>
+    </div>
+</section>
+
 <div class="profile-shell">
-    <div class="profile-header card">
+    <section class="profile-hero">
         <div class="profile-avatar-wrap">
             {% if user.profile.avatar %}
                 <img src="{{ user.profile.avatar.url }}" alt="{{ user.username }} avatar" class="avatar-preview">
@@ -10,55 +25,82 @@
                 <div class="avatar-placeholder" aria-label="Default avatar">{{ user.username|first|upper }}</div>
             {% endif %}
         </div>
-
         <div class="profile-identity">
             <span class="profile-tag">Profile</span>
-            <h1>{{ user.get_full_name|default:user.username }}</h1>
-            <p class="subtitle">{{ user.username }} · {{ user.email }}</p>
+            <h2>{{ user.get_full_name|default:user.username }}</h2>
+            <p class="profile-handle">@{{ user.username }} · {{ user.email }}</p>
             {% if user.profile.bio %}
                 <p class="profile-bio">{{ user.profile.bio }}</p>
             {% else %}
                 <p class="profile-bio muted">Add a short bio to personalize your dashboard.</p>
             {% endif %}
-        </div>
-    </div>
-
-    <div class="stats-row">
-        <div class="stat-box">
-            <div class="stat-number">{{ stats.completed_this_week }}</div>
-            <div class="stat-label">Done this week</div>
-        </div>
-        <div class="stat-box">
-            <div class="stat-number">{{ stats.total_pending }}</div>
-            <div class="stat-label">Pending</div>
-        </div>
-        <div class="stat-box">
-            <div class="stat-number">{{ stats.total_tasks }}</div>
-            <div class="stat-label">Total tasks</div>
-        </div>
-    </div>
-
-    <div class="profile-edit card">
-        <div class="section-heading">
-            <h2>Edit info</h2>
-            <a href="{% url 'accounts:settings' %}" class="btn btn-secondary">Settings</a>
-        </div>
-
-        <form method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-            {% for field in form %}
-            <div class="field">
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-                {% if field.help_text %}<div class="helptext">{{ field.help_text }}</div>{% endif %}
-                {% if field.errors %}<ul class="errorlist">{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+            <div class="profile-quickstats">
+                <span><strong>{{ stats.completed_this_week }}</strong> done this week</span>
+                <span><strong>{{ stats.total_pending }}</strong> open</span>
+                <span><strong>{{ stats.overdue }}</strong> overdue</span>
+                <span><strong>{{ stats.streak }}</strong> day streak</span>
             </div>
-            {% endfor %}
-            <div class="btn-row">
-                <button type="submit" class="btn btn-primary">Save changes</button>
-                <a href="{% url 'accounts:settings' %}" class="btn btn-secondary">Settings</a>
+        </div>
+    </section>
+
+    <div class="stat-grid compact">
+        <div class="stat-card stat-brand">
+            <span class="stat-icon"><svg class="icon"><use href="#i-check"></use></svg></span>
+            <span class="stat-copy"><span class="stat-value">{{ stats.completed_this_week }}</span><span class="stat-label">Done this week</span></span>
+        </div>
+        <div class="stat-card stat-warn">
+            <span class="stat-icon"><svg class="icon"><use href="#i-inbox"></use></svg></span>
+            <span class="stat-copy"><span class="stat-value">{{ stats.total_pending }}</span><span class="stat-label">Open tasks</span></span>
+        </div>
+        <div class="stat-card stat-done">
+            <span class="stat-icon"><svg class="icon"><use href="#i-target"></use></svg></span>
+            <span class="stat-copy"><span class="stat-value">{{ stats.total_tasks }}</span><span class="stat-label">Total tasks</span></span>
+        </div>
+        <div class="stat-card stat-danger">
+            <span class="stat-icon"><svg class="icon"><use href="#i-flame"></use></svg></span>
+            <span class="stat-copy"><span class="stat-value">{{ stats.streak }}</span><span class="stat-label">Day streak</span></span>
+        </div>
+    </div>
+
+    <section class="panel">
+        <header class="panel-head">
+            <div>
+                <p class="eyebrow">Edit</p>
+                <h2>Personal info</h2>
+            </div>
+        </header>
+        <form method="post" enctype="multipart/form-data" class="form-panel">
+            {% csrf_token %}
+            <div class="field-grid field-grid-2">
+                <div class="field">
+                    <label for="{{ form.first_name.id_for_label }}">First name</label>
+                    {{ form.first_name }}
+                </div>
+                <div class="field">
+                    <label for="{{ form.last_name.id_for_label }}">Last name</label>
+                    {{ form.last_name }}
+                </div>
+            </div>
+            <div class="field">
+                <label for="{{ form.bio.id_for_label }}">Bio</label>
+                {{ form.bio }}
+                {% if form.bio.errors %}<ul class="errorlist">{% for error in form.bio.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+                <div class="helptext">A short line shown on your profile.</div>
+            </div>
+            <div class="field">
+                <label for="{{ form.avatar.id_for_label }}">Avatar</label>
+                {{ form.avatar }}
+                {% if form.avatar.errors %}<ul class="errorlist">{% for error in form.avatar.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+                {% if form.avatar.help_text %}<div class="helptext">{{ form.avatar.help_text }}</div>{% endif %}
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>
+                    Save changes
+                </button>
+                <a class="btn btn-secondary" href="{% url 'accounts:settings' %}">Settings</a>
             </div>
         </form>
-    </div>
+    </section>
 </div>
 {% endblock %}

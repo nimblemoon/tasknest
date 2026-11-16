@@ -1,23 +1,32 @@
 {% extends "base.html" %}
 {% block title %}Log in — TaskNest{% endblock %}
-{% block body %}
+{% block body_class %}auth-body{% endblock %}
+{% block guest %}
 <div class="auth-shell">
     <div class="auth-cover">
-        <div class="brand-mark">TaskNest</div>
-        <div>
-            <h1 class="cover-headline">Know what's due before it's late.</h1>
-            <p class="cover-sub">One list, sorted by what actually needs you next.</p>
+        <div class="auth-cover-top">
+            <a class="brand brand-on-dark" href="{% url 'accounts:login' %}">
+                <span class="brand-mark"><svg class="icon"><use href="#i-check"></use></svg></span>
+                <span class="brand-word">TaskNest</span>
+            </a>
+            <span class="auth-badge">For students who like calm</span>
         </div>
-        <div></div>
+        <div class="auth-cover-main">
+            <h1 class="cover-headline">Know what's due before it's late.</h1>
+            <p class="cover-sub">One list, sorted by what actually needs you next. Projects, steps, and a focus timer to keep you honest.</p>
+            <ul class="cover-list">
+                <li><svg class="icon"><use href="#i-check"></use></svg> Smart views for overdue, today, and upcoming</li>
+                <li><svg class="icon"><use href="#i-check"></use></svg> Project pulse and two-week insights</li>
+                <li><svg class="icon"><use href="#i-check"></use></svg> Dark mode and timezone-aware deadlines</li>
+            </ul>
+        </div>
+        <div class="auth-cover-foot">
+            <p class="cover-foot-note">“A clean nest is a clear mind.”</p>
+        </div>
     </div>
     <div class="auth-form-side">
         <div class="auth-form-inner">
-            {% if messages %}
-                <ul class="messages">
-                    {% for message in messages %}<li class="message {{ message.tags }}">{{ message }}</li>{% endfor %}
-                </ul>
-            {% endif %}
-            <h1>Log in</h1>
+            <h1>Welcome back</h1>
             <p class="subtitle">Pick up where you left off.</p>
             <form method="post">
                 {% csrf_token %}
@@ -29,7 +38,7 @@
                 </div>
                 {% endfor %}
                 {% if form.non_field_errors %}<ul class="errorlist">{% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
-                <button type="submit" class="btn btn-primary" style="width:100%;">Log in</button>
+                <button type="submit" class="btn btn-primary btn-block">Log in</button>
             </form>
             <p class="auth-switch">New here? <a href="{% url 'accounts:register' %}">Create an account</a></p>
         </div>

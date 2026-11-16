@@ -1,65 +1,198 @@
 {% extends "base.html" %}
 {% block title %}Dashboard — TaskNest{% endblock %}
+
 {% block content %}
-<div class="dashboard-header">
-    <div>
-        <h1>This week</h1>
-        <p class="subtitle">Sorted by what needs you next.</p>
+<section class="page-head">
+    <div class="page-head-text">
+        <p class="eyebrow">{{ today|date:"l, F j" }}</p>
+        <h1>{{ greeting }}, {{ user.first_name|default:user.username }}</h1>
+        <p class="page-sub">
+            {% if stats.overdue %}
+                You have {{ stats.overdue }} overdue task{{ stats.overdue|pluralize }}. Start there — it gets easier.
+            {% elif stats.due_today %}
+                {{ stats.due_today }} task{{ stats.due_today|pluralize }} due today. One at a time.
+            {% elif stats.pending %}
+                Nothing overdue. {{ stats.pending }} open task{{ stats.pending|pluralize }} in the nest.
+            {% else %}
+                Your nest is clear. Add something when you're ready.
+            {% endif %}
+        </p>
     </div>
-    <a href="{% url 'tasks:add_task' %}" class="btn btn-primary">+ New task</a>
+    <div class="page-actions">
+        <a class="btn btn-secondary" href="{% url 'tasks:add_task' %}">Full editor</a>
+        <button type="button" class="btn btn-primary" data-open-dialog="quick-add">
+            <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+            Quick add
+        </button>
+    </div>
+</section>
+
+<section class="stat-grid" aria-label="Workload summary">
+    <a class="stat-card stat-danger" href="?view=overdue">
+        <span class="stat-icon"><svg class="icon"><use href="#i-alert"></use></svg></span>
+        <span class="stat-copy">
+            <span class="stat-value">{{ stats.overdue }}</span>
+            <span class="stat-label">Overdue</span>
+        </span>
+        <span class="stat-hint">{% if stats.overdue %}Needs attention{% else %}All clear{% endif %}</span>
+    </a>
+    <a class="stat-card stat-warn" href="?view=today">
+        <span class="stat-icon"><svg class="icon"><use href="#i-clock"></use></svg></span>
+        <span class="stat-copy">
+            <span class="stat-value">{{ stats.due_today }}</span>
+            <span class="stat-label">Due today</span>
+        </span>
+        <span class="stat-hint">{% if stats.due_today %}Focus here{% else %}Clear schedule{% endif %}</span>
+    </a>
+    <a class="stat-card stat-brand" href="?view=all">
+        <span class="stat-icon"><svg class="icon"><use href="#i-inbox"></use></svg></span>
+        <span class="stat-copy">
+            <span class="stat-value">{{ stats.pending }}</span>
+            <span class="stat-label">Open tasks</span>
+        </span>
+        <span class="stat-hint">{{ stats.projects }} active project{{ stats.projects|pluralize }}</span>
+    </a>
+    <a class="stat-card stat-done" href="?view=completed">
+        <span class="stat-icon"><svg class="icon"><use href="#i-check"></use></svg></span>
+        <span class="stat-copy">
+            <span class="stat-value">{{ stats.completed_week }}</span>
+            <span class="stat-label">Done this week</span>
+        </span>
+        <span class="stat-hint">{{ stats.completion_rate }}% lifetime completion</span>
+    </a>
+</section>
+
+<div class="toolbar">
+    <nav class="smart-tabs" aria-label="Task views">
+        <a class="smart-tab {% if active_view == 'all' %}is-active{% endif %}" href="?view=all{% if base_query %}&amp;{{ base_query }}{% endif %}">All <span>{{ counts.all }}</span></a>
+        <a class="smart-tab {% if active_view == 'today' %}is-active{% endif %}" href="?view=today{% if base_query %}&amp;{{ base_query }}{% endif %}">Today <span>{{ counts.today }}</span></a>
+        <a class="smart-tab {% if active_view == 'upcoming' %}is-active{% endif %}" href="?view=upcoming{% if base_query %}&amp;{{ base_query }}{% endif %}">Upcoming <span>{{ counts.upcoming }}</span></a>
+        <a class="smart-tab {% if active_view == 'overdue' %}is-active{% endif %}" href="?view=overdue{% if base_query %}&amp;{{ base_query }}{% endif %}">Overdue <span>{{ counts.overdue }}</span></a>
+        <a class="smart-tab {% if active_view == 'someday' %}is-active{% endif %}" href="?view=someday{% if base_query %}&amp;{{ base_query }}{% endif %}">No date <span>{{ counts.someday }}</span></a>
+        <a class="smart-tab {% if active_view == 'completed' %}is-active{% endif %}" href="?view=completed{% if base_query %}&amp;{{ base_query }}{% endif %}">Done <span>{{ counts.completed }}</span></a>
+    </nav>
+
+    <form class="filter-inline" method="get">
+        <input type="hidden" name="view" value="{{ active_view }}">
+        {% if search_query %}<input type="hidden" name="q" value="{{ search_query }}">{% endif %}
+        <div class="filter-inline-field">
+            <label for="{{ filter_form.project.id_for_label }}">Project</label>
+            {{ filter_form.project }}
+        </div>
+        <div class="filter-inline-field">
+            <label for="{{ filter_form.priority.id_for_label }}">Priority</label>
+            {{ filter_form.priority }}
+        </div>
+        <div class="filter-inline-field">
+            <label for="{{ filter_form.sort.id_for_label }}">Sort</label>
+            {{ filter_form.sort }}
+        </div>
+        <button type="submit" class="btn btn-secondary btn-sm">Apply</button>
+        {% if has_filters %}
+        <a class="btn btn-ghost btn-sm" href="{% url 'tasks:dashboard' %}">Reset</a>
+        {% endif %}
+    </form>
 </div>
 
-<div class="stats-row">
-    <div class="stat-box">
-        <div class="stat-number">{{ pending_count }}</div>
-        <div class="stat-label">Pending</div>
-    </div>
-    <div class="stat-box">
-        <div class="stat-number">{{ completed_count }}</div>
-        <div class="stat-label">Done</div>
-    </div>
-</div>
+<div class="dashboard-grid">
+    <section class="task-panel" aria-label="Tasks">
+        {% if search_query %}
+        <div class="search-summary">
+            <span>Results for <strong>“{{ search_query }}”</strong></span>
+            <a href="{% url 'tasks:dashboard' %}">Clear search</a>
+        </div>
+        {% endif %}
 
-<form method="get" class="filter-bar">
-    <div class="field">
-        <label for="{{ filter_form.status.id_for_label }}">Status</label>
-        {{ filter_form.status }}
-    </div>
-    <div class="field">
-        <label for="{{ filter_form.priority.id_for_label }}">Priority</label>
-        {{ filter_form.priority }}
-    </div>
-    <div class="field">
-        <label for="{{ filter_form.sort.id_for_label }}">Sort</label>
-        {{ filter_form.sort }}
-    </div>
-    <button type="submit" class="btn btn-secondary">Apply</button>
-    <a href="{% url 'tasks:dashboard' %}" class="btn btn-secondary">Clear</a>
-</form>
-
-<div class="task-list">
-    {% for task in tasks %}
-    <div class="task-row priority-{{ task.priority }} {% if task.is_complete %}completed{% endif %}">
-        <form method="post" action="{% url 'tasks:complete_task' task.pk %}">
-            {% csrf_token %}
-            <input type="checkbox" class="task-checkbox" onchange="this.form.submit()" {% if task.is_complete %}checked{% endif %} aria-label="Mark {{ task.title }} as {% if task.is_complete %}not done{% else %}done{% endif %}">
-        </form>
-        <div class="task-main">
-            <div class="task-title {% if task.is_complete %}completed{% endif %}">{{ task.title }}</div>
-            <div class="task-meta {% if task.is_overdue %}due-overdue{% elif "today" in task.humanized_due %}due-today{% else %}due-normal{% endif %}">
-                {{ task.humanized_due }}
+        {% for group in groups %}
+        <section class="task-group" aria-labelledby="group-{{ group.key }}">
+            <header class="group-head">
+                <h2 id="group-{{ group.key }}">
+                    {% if group.key == 'pinned' %}<svg class="icon icon-xs" aria-hidden="true"><use href="#i-pin"></use></svg>{% endif %}
+                    {{ group.label }}
+                </h2>
+                <span class="group-count">{{ group.tasks|length }}</span>
+            </header>
+            <div class="task-list">
+                {% for task in group.tasks %}
+                    {% include "tasks/_task_row.html" with task=task %}
+                {% endfor %}
+            </div>
+        </section>
+        {% empty %}
+        <div class="empty-state">
+            <span class="empty-mark"><svg class="icon"><use href="#i-check"></use></svg></span>
+            <h2>{% if has_filters %}Nothing matches those filters{% else %}A clean nest{% endif %}</h2>
+            <p>{% if has_filters %}Try a different view, project, or search term.{% else %}Add a task and TaskNest will keep it sorted by what needs you next.{% endif %}</p>
+            <div class="btn-row center">
+                {% if has_filters %}
+                <a class="btn btn-secondary" href="{% url 'tasks:dashboard' %}">Clear filters</a>
+                {% endif %}
+                <button type="button" class="btn btn-primary" data-open-dialog="quick-add">
+                    <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+                    Add a task
+                </button>
             </div>
         </div>
-        <div class="task-actions">
-            <a href="{% url 'tasks:edit_task' task.pk %}">Edit</a>
-            <a href="{% url 'tasks:delete_task' task.pk %}" class="danger">Delete</a>
-        </div>
-    </div>
-    {% empty %}
-    <div class="empty-state">
-        <p>Nothing here yet.</p>
-        <a href="{% url 'tasks:add_task' %}" class="btn btn-primary">Add your first task</a>
-    </div>
-    {% endfor %}
+        {% endfor %}
+    </section>
+
+    <aside class="dashboard-rail" aria-label="Focus and progress">
+        <section class="rail-card focus-card" data-focus-timer data-duration="25">
+            <header class="rail-card-head">
+                <span class="rail-icon"><svg class="icon"><use href="#i-sparkle"></use></svg></span>
+                <h2>Focus session</h2>
+                <span class="rail-badge" data-focus-mode>Deep work</span>
+            </header>
+            <div class="focus-display">
+                <span data-focus-time>25:00</span>
+            </div>
+            <div class="focus-track"><span class="focus-fill" data-focus-bar></span></div>
+            <div class="focus-controls">
+                <button type="button" class="btn btn-primary btn-sm" data-focus-start>
+                    <svg class="icon" aria-hidden="true"><use href="#i-play"></use></svg>
+                    <span data-focus-start-label>Start</span>
+                </button>
+                <button type="button" class="icon-btn" data-focus-reset aria-label="Reset timer" title="Reset timer">
+                    <svg class="icon"><use href="#i-reset"></use></svg>
+                </button>
+                <button type="button" class="btn btn-ghost btn-sm" data-focus-switch>Take a break</button>
+            </div>
+            <p class="focus-note">One task. One tab. Twenty-five minutes.</p>
+        </section>
+
+        <section class="rail-card progress-card">
+            <header class="rail-card-head">
+                <span class="rail-icon"><svg class="icon"><use href="#i-target"></use></svg></span>
+                <h2>Completion</h2>
+            </header>
+            <div class="progress-ring" style="--value: {{ stats.completion_rate }}">
+                <span>{{ stats.completion_rate }}<small>%</small></span>
+            </div>
+            <div class="progress-legend">
+                <span><strong>{{ stats.completed }}</strong> done</span>
+                <span><strong>{{ stats.pending }}</strong> open</span>
+            </div>
+        </section>
+
+        <section class="rail-card">
+            <header class="rail-card-head">
+                <span class="rail-icon"><svg class="icon"><use href="#i-folder"></use></svg></span>
+                <h2>Project pulse</h2>
+                <a class="rail-link" href="{% url 'tasks:projects' %}">All</a>
+            </header>
+            {% for project in progress %}
+            <a class="pulse-row" href="{% url 'tasks:project_detail' project.pk %}">
+                <span class="pulse-top">
+                    <span class="project-dot" style="--dot: {{ project.color_hex }}"></span>
+                    <span class="pulse-name">{{ project.name }}</span>
+                    <span class="pulse-count">{{ project.done }}/{{ project.total }}</span>
+                </span>
+                <span class="progress-bar"><span style="width: {{ project.progress }}%"></span></span>
+            </a>
+            {% empty %}
+            <p class="rail-empty">No projects yet. <a href="{% url 'tasks:projects' %}">Create one</a> to group related work.</p>
+            {% endfor %}
+        </section>
+    </aside>
 </div>
 {% endblock %}

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}{{ form_heading }} — TaskNest{% endblock %}
+
+{% block content %}
+<section class="page-head">
+    <div class="page-head-text">
+        <p class="eyebrow">Projects</p>
+        <h1>{{ form_heading }}</h1>
+        <p class="page-sub">Adjust the details without losing your place.</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-secondary" href="{% url 'tasks:projects' %}">Cancel</a>
+    </div>
+</section>
+
+<div class="form-layout">
+    <form method="post" class="panel form-panel" novalidate>
+        {% csrf_token %}
+        {% if form.non_field_errors %}
+        <div class="form-errors">{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>
+        {% endif %}
+
+        <div class="field">
+            <label for="{{ form.name.id_for_label }}">Name</label>
+            {{ form.name }}
+            {% if form.name.errors %}<ul class="errorlist">{% for error in form.name.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+        </div>
+        <div class="field-grid field-grid-2">
+            <div class="field">
+                <label for="{{ form.code.id_for_label }}">Code</label>
+                {{ form.code }}
+                {% if form.code.errors %}<ul class="errorlist">{% for error in form.code.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+                <div class="helptext">Short label shown on task rows, e.g. CS101.</div>
+            </div>
+            <div class="field">
+                <label for="{{ form.description.id_for_label }}">Description</label>
+                {{ form.description }}
+                {% if form.description.errors %}<ul class="errorlist">{% for error in form.description.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+        </div>
+
+        <div class="field">
+            <label>Colour</label>
+            <div class="color-picker">
+                {% for choice in color_choices %}
+                <label class="color-choice">
+                    <input type="radio" name="color" value="{{ choice.value }}" {% if form.color.value == choice.value %}checked{% endif %}>
+                    <span class="color-swatch" style="background: {{ choice.hex }}"></span>
+                    <span>{{ choice.label }}</span>
+                </label>
+                {% endfor %}
+            </div>
+            {% if form.color.errors %}<ul class="errorlist">{% for error in form.color.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+        </div>
+
+        <div class="field">
+            <div class="toggle-row">
+                {{ form.is_archived }}
+                <label for="{{ form.is_archived.id_for_label }}">Archive this project</label>
+            </div>
+            <div class="helptext">Archived projects are hidden from the sidebar and from quick-add.</div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">
+                <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>
+                {{ submit_label }}
+            </button>
+            <a class="btn btn-secondary" href="{% url 'tasks:projects' %}">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

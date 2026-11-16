@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Board — TaskNest{% endblock %}
+
+{% block content %}
+<section class="page-head">
+    <div class="page-head-text">
+        <p class="eyebrow">Workflow</p>
+        <h1>Deadline board</h1>
+        <p class="page-sub">Every open task, sorted by how soon it needs you. Drag-free and honest.</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-secondary" href="{% url 'tasks:calendar' %}">
+            <svg class="icon" aria-hidden="true"><use href="#i-calendar"></use></svg>
+            Calendar
+        </a>
+        <button type="button" class="btn btn-primary" data-open-dialog="quick-add">
+            <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+            New task
+        </button>
+    </div>
+</section>
+
+<div class="board-filter">
+    <a class="filter-chip {% if not active_project %}is-active{% endif %}" href="{% url 'tasks:board' %}">All projects</a>
+    {% for project in projects %}
+    <a class="filter-chip {% if active_project == project.pk|stringformat:'s' %}is-active{% endif %}" href="?project={{ project.pk }}">
+        <span class="project-dot" style="--dot: {{ project.color_hex }}"></span>{{ project.name }}
+    </a>
+    {% endfor %}
+</div>
+
+<div class="board-scroll">
+    <div class="board">
+        {% for column in columns %}
+        <section class="board-column tone-{{ column.tone }}" aria-labelledby="col-{{ column.key }}">
+            <header class="board-column-head">
+                <h2 id="col-{{ column.key }}">{{ column.label }}</h2>
+                <span class="board-count">{{ column.tasks|length }}</span>
+            </header>
+            <div class="board-stack">
+                {% for task in column.tasks %}
+                <article class="board-card task-{{ task.priority }} {% if task.is_complete %}is-done{% endif %}">
+                    <div class="board-card-top">
+                        <span class="priority-pill p-{{ task.priority }}"><span class="priority-dot"></span>{{ task.get_priority_display }}</span>
+                        <form method="post" action="{% url 'tasks:complete_task' task.pk %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                            <button type="submit" class="check check-sm {% if task.is_complete %}is-checked{% endif %}" aria-label="{% if task.is_complete %}Reopen {{ task.title }}{% else %}Complete {{ task.title }}{% endif %}">
+                                <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>
+                            </button>
+                        </form>
+                    </div>
+                    <a class="board-title" href="{% url 'tasks:task_detail' task.pk %}">{{ task.title }}</a>
+                    <div class="board-meta">
+                        {% if task.project %}
+                        <span class="project-chip">
+                            <span class="project-dot" style="--dot: {{ task.project.color_hex }}"></span>{{ task.project.label }}
+                        </span>
+                        {% endif %}
+                        <span class="meta-item tone-{{ task.due_tone }}">
+                            <svg class="icon icon-xs" aria-hidden="true"><use href="#i-clock"></use></svg>
+                            {{ task.humanized_due }}
+                        </span>
+                    </div>
+                    {% if task.subtask_total %}
+                    <div class="mini-progress" title="{{ task.subtask_done }} of {{ task.subtask_total }} steps done">
+                        <span style="width: {{ task.subtask_percent }}%"></span>
+                    </div>
+                    {% endif %}
+                    <footer class="board-card-foot">
+                        <span class="board-card-id">#{{ task.pk }}</span>
+                        <span class="board-card-actions">
+                            <a class="icon-btn icon-btn-sm" href="{% url 'tasks:edit_task' task.pk %}" aria-label="Edit {{ task.title }}">
+                                <svg class="icon"><use href="#i-edit"></use></svg>
+                            </a>
+                            <a class="icon-btn icon-btn-sm danger" href="{% url 'tasks:delete_task' task.pk %}" aria-label="Delete {{ task.title }}">
+                                <svg class="icon"><use href="#i-trash"></use></svg>
+                            </a>
+                        </span>
+                    </footer>
+                </article>
+                {% empty %}
+                <p class="board-empty">Nothing here.</p>
+                {% endfor %}
+            </div>
+        </section>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

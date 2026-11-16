@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}Projects — TaskNest{% endblock %}
+
+{% block content %}
+<section class="page-head">
+    <div class="page-head-text">
+        <p class="eyebrow">Organise</p>
+        <h1>Projects</h1>
+        <p class="page-sub">Colour-coded homes for related work. Group a few tasks and the progress takes care of itself.</p>
+    </div>
+    <div class="page-actions">
+        <button type="button" class="btn btn-primary" data-open-dialog="project-dialog">
+            <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+            New project
+        </button>
+    </div>
+</section>
+
+{% if projects %}
+<div class="project-grid">
+    {% for project in projects %}
+    <article class="project-card" style="--accent: {{ project.color_hex }}">
+        <header class="project-card-head">
+            <span class="project-avatar">{{ project.label|first|upper }}</span>
+            <div class="project-card-actions">
+                <a class="icon-btn icon-btn-sm" href="{% url 'tasks:project_edit' project.pk %}" aria-label="Edit {{ project.name }}">
+                    <svg class="icon"><use href="#i-edit"></use></svg>
+                </a>
+                <a class="icon-btn icon-btn-sm danger" href="{% url 'tasks:project_delete' project.pk %}" aria-label="Delete {{ project.name }}">
+                    <svg class="icon"><use href="#i-trash"></use></svg>
+                </a>
+            </div>
+        </header>
+        <div class="project-card-body">
+            <h2><a href="{% url 'tasks:project_detail' project.pk %}">{{ project.name }}</a></h2>
+            {% if project.code %}<span class="project-code">{{ project.code }}</span>{% endif %}
+            {% if project.description %}<p class="project-desc">{{ project.description }}</p>{% else %}<p class="project-desc muted-text">No description yet.</p>{% endif %}
+        </div>
+        <div class="project-card-progress">
+            <div class="progress-bar"><span style="width: {{ project.progress }}%"></span></div>
+            <div class="project-card-stats">
+                <span><strong>{{ project.done }}</strong> done</span>
+                <span><strong>{{ project.open_tasks }}</strong> open</span>
+                <span><strong>{{ project.total_tasks }}</strong> total</span>
+            </div>
+        </div>
+        <footer class="project-card-foot">
+            <a class="btn btn-secondary btn-sm" href="{% url 'tasks:project_detail' project.pk %}">Open project</a>
+            <span class="project-percent">{{ project.progress }}%</span>
+        </footer>
+    </article>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <span class="empty-mark"><svg class="icon"><use href="#i-folder"></use></svg></span>
+    <h2>No projects yet</h2>
+    <p>Group related tasks under a project and the progress starts tracking itself.</p>
+    <button type="button" class="btn btn-primary" data-open-dialog="project-dialog">
+        <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+        Create your first project
+    </button>
+</div>
+{% endif %}
+
+{% if archived_projects %}
+<section class="archived-section">
+    <h2>Archived</h2>
+    <div class="archived-list">
+        {% for project in archived_projects %}
+        <a class="archived-row" href="{% url 'tasks:project_edit' project.pk %}">
+            <span class="project-dot" style="--dot: {{ project.color_hex }}"></span>
+            <span>{{ project.name }}</span>
+            <span class="archived-meta">{{ project.done }}/{{ project.total }} done · archived</span>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<dialog class="modal" id="project-dialog" aria-labelledby="project-dialog-title">
+    <form method="post" action="{% url 'tasks:project_create' %}" class="modal-card">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <header class="modal-head">
+            <div>
+                <p class="eyebrow">New project</p>
+                <h2 id="project-dialog-title">Create a project</h2>
+            </div>
+            <button type="button" class="icon-btn" data-close-dialog aria-label="Close">
+                <svg class="icon"><use href="#i-x"></use></svg>
+            </button>
+        </header>
+
+        <div class="field">
+            <label for="{{ form.name.id_for_label }}">Name</label>
+            {{ form.name }}
+            {% if form.name.errors %}<ul class="errorlist">{% for error in form.name.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+        </div>
+        <div class="field-grid field-grid-2">
+            <div class="field">
+                <label for="{{ form.code.id_for_label }}">Code</label>
+                {{ form.code }}
+                {% if form.code.errors %}<ul class="errorlist">{% for error in form.code.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+                <div class="helptext">Short label, e.g. CS101.</div>
+            </div>
+            <div class="field">
+                <label for="{{ form.description.id_for_label }}">Description</label>
+                {{ form.description }}
+            </div>
+        </div>
+
+        <div class="field">
+            <label>Colour</label>
+            <div class="color-picker">
+                {% for choice in color_choices %}
+                <label class="color-choice">
+                    <input type="radio" name="color" value="{{ choice.value }}" {% if form.color.value == choice.value or not form.color.value and forloop.first %}checked{% endif %}>
+                    <span class="color-swatch" style="background: {{ choice.hex }}"></span>
+                    <span>{{ choice.label }}</span>
+                </label>
+                {% endfor %}
+            </div>
+            {% if form.color.errors %}<ul class="errorlist">{% for error in form.color.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+        </div>
+
+        <footer class="modal-foot">
+            <span class="modal-hint">You can archive a project later.</span>
+            <div class="btn-row">
+                <button type="button" class="btn btn-ghost" data-close-dialog>Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+                    Create project
+                </button>
+            </div>
+        </footer>
+    </form>
+</dialog>
+{% endblock %}

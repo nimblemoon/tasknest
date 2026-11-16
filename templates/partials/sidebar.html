@@ -1,0 +1,102 @@
+{% url 'tasks:dashboard' as dashboard_url %}
+{% url 'tasks:board' as board_url %}
+{% url 'tasks:calendar' as calendar_url %}
+{% url 'tasks:insights' as insights_url %}
+{% url 'tasks:projects' as projects_url %}
+<aside class="sidebar" data-sidebar aria-label="Main navigation">
+    <div class="sidebar-head">
+        <a class="brand" href="{{ dashboard_url }}" aria-label="TaskNest home">
+            <span class="brand-mark" aria-hidden="true">
+                <svg class="icon"><use href="#i-check"></use></svg>
+            </span>
+            <span class="brand-word">TaskNest</span>
+        </a>
+        <button type="button" class="icon-btn sidebar-close" data-sidebar-close aria-label="Close navigation">
+            <svg class="icon"><use href="#i-x"></use></svg>
+        </button>
+    </div>
+
+    <a href="{% url 'tasks:add_task' %}" class="btn btn-primary btn-block sidebar-new" data-open-dialog="quick-add">
+        <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+        New task
+    </a>
+
+    <nav class="nav-group" aria-label="Workspace">
+        <p class="nav-label">Workspace</p>
+        <a class="nav-item {% if request.path == dashboard_url %}is-active{% endif %}" href="{{ dashboard_url }}">
+            <svg class="icon" aria-hidden="true"><use href="#i-home"></use></svg>
+            <span>Dashboard</span>
+        </a>
+        <a class="nav-item {% if request.path == board_url %}is-active{% endif %}" href="{{ board_url }}">
+            <svg class="icon" aria-hidden="true"><use href="#i-board"></use></svg>
+            <span>Board</span>
+        </a>
+        <a class="nav-item {% if request.path == calendar_url %}is-active{% endif %}" href="{{ calendar_url }}">
+            <svg class="icon" aria-hidden="true"><use href="#i-calendar"></use></svg>
+            <span>Calendar</span>
+        </a>
+        <a class="nav-item {% if request.path == insights_url %}is-active{% endif %}" href="{{ insights_url }}">
+            <svg class="icon" aria-hidden="true"><use href="#i-chart"></use></svg>
+            <span>Insights</span>
+        </a>
+    </nav>
+
+    <nav class="nav-group nav-projects" aria-label="Projects">
+        <div class="nav-label-row">
+            <p class="nav-label">Projects</p>
+            <a class="nav-mini-link" href="{{ projects_url }}" aria-label="Manage projects">
+                <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+            </a>
+        </div>
+        {% for project in nav_projects|slice:":7" %}
+        <a class="nav-item nav-project" href="{% url 'tasks:project_detail' project.pk %}">
+            <span class="project-dot" style="--dot: {{ project.color_hex }}"></span>
+            <span class="nav-project-name">{{ project.name }}</span>
+            {% if project.code %}<span class="nav-project-code">{{ project.code }}</span>{% endif %}
+        </a>
+        {% empty %}
+        <a class="nav-empty" href="{{ projects_url }}">
+            <span>Create your first project</span>
+            <svg class="icon" aria-hidden="true"><use href="#i-arrow-right"></use></svg>
+        </a>
+        {% endfor %}
+        {% if nav_projects|length > 7 %}
+        <a class="nav-more" href="{{ projects_url }}">All projects</a>
+        {% endif %}
+    </nav>
+
+    <div class="sidebar-foot">
+        <a class="user-card" href="{% url 'accounts:profile' %}">
+            <span class="avatar avatar-sm">
+                {% if profile.avatar %}
+                    <img src="{{ profile.avatar.url }}" alt="">
+                {% else %}
+                    {{ user.username|first|upper }}
+                {% endif %}
+            </span>
+            <span class="user-card-text">
+                <strong>{{ user.get_full_name|default:user.username }}</strong>
+                <span>@{{ user.username }}</span>
+            </span>
+            <svg class="icon" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
+        </a>
+        <div class="sidebar-utils">
+            <form method="post" action="{% url 'accounts:theme_toggle' %}">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                <button type="submit" class="icon-btn" title="Switch to {% if profile.dark_mode %}light{% else %}dark{% endif %} mode" aria-label="Toggle colour theme">
+                    <svg class="icon"><use href="#{% if profile.dark_mode %}i-sun{% else %}i-moon{% endif %}"></use></svg>
+                </button>
+            </form>
+            <a class="icon-btn" href="{% url 'accounts:settings' %}" title="Settings" aria-label="Settings">
+                <svg class="icon"><use href="#i-settings"></use></svg>
+            </a>
+            <form method="post" action="{% url 'accounts:logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="icon-btn" title="Log out" aria-label="Log out">
+                    <svg class="icon"><use href="#i-logout"></use></svg>
+                </button>
+            </form>
+        </div>
+    </div>
+</aside>

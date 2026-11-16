@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Calendar — TaskNest{% endblock %}
+
+{% block content %}
+<section class="page-head">
+    <div class="page-head-text">
+        <p class="eyebrow">Timeline</p>
+        <h1>Calendar</h1>
+        <p class="page-sub">See the shape of the month before it fills itself in.</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-secondary" href="{% url 'tasks:board' %}">
+            <svg class="icon" aria-hidden="true"><use href="#i-board"></use></svg>
+            Board
+        </a>
+        <a class="btn btn-primary" href="{% url 'tasks:add_task' %}">
+            <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+            New task
+        </a>
+    </div>
+</section>
+
+<div class="calendar-card">
+    <header class="calendar-head">
+        <div class="calendar-title">
+            <h2>{{ month_label }}</h2>
+            <span class="calendar-sub">Sunday-first month view</span>
+        </div>
+        <div class="calendar-nav">
+            <a class="icon-btn" href="?year={{ previous.year }}&amp;month={{ previous.month }}" aria-label="Previous month">
+                <svg class="icon"><use href="#i-arrow-left"></use></svg>
+            </a>
+            <a class="btn btn-secondary btn-sm" href="{% url 'tasks:calendar' %}">Today</a>
+            <a class="icon-btn" href="?year={{ next.year }}&amp;month={{ next.month }}" aria-label="Next month">
+                <svg class="icon"><use href="#i-arrow-right"></use></svg>
+            </a>
+        </div>
+    </header>
+
+    <div class="calendar-weekdays" aria-hidden="true">
+        {% for name in weekday_names %}<span>{{ name }}</span>{% endfor %}
+    </div>
+
+    <div class="calendar-grid">
+        {% for week in weeks %}
+            {% for cell in week %}
+            <div class="calendar-cell {% if not cell.in_month %}is-outside{% endif %} {% if cell.is_today %}is-today{% endif %}">
+                <div class="calendar-cell-head">
+                    <span class="calendar-day">{{ cell.date|date:"j" }}</span>
+                    <a class="calendar-add" href="{% url 'tasks:add_task' %}?due={{ cell.date|date:'Y-m-d' }}" aria-label="Add task on {{ cell.date|date:'F j' }}" title="Add task on this day">
+                        <svg class="icon"><use href="#i-plus"></use></svg>
+                    </a>
+                </div>
+                <div class="calendar-tasks">
+                    {% for task in cell.tasks|slice:":3" %}
+                    <a class="calendar-task task-{{ task.priority }} {% if task.is_complete %}is-done{% endif %}" href="{% url 'tasks:task_detail' task.pk %}" title="{{ task.title }}">
+                        {% if task.project %}<span class="project-dot" style="--dot: {{ task.project.color_hex }}"></span>{% endif %}
+                        <span class="calendar-task-title">{{ task.title }}</span>
+                    </a>
+                    {% endfor %}
+                    {% if cell.tasks|length > 3 %}
+                    <span class="calendar-more">+{{ cell.tasks|length|add:"-3" }} more</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% endfor %}
+    </div>
+
+    <footer class="calendar-foot">
+        <span class="legend"><span class="legend-dot p-high"></span>High</span>
+        <span class="legend"><span class="legend-dot p-medium"></span>Medium</span>
+        <span class="legend"><span class="legend-dot p-low"></span>Low</span>
+        <span class="calendar-hint">Hover a day and press <strong>+</strong> to add a task on that date.</span>
+    </footer>
+</div>
+{% endblock %}

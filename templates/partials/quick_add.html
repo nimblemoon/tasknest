@@ -1,0 +1,45 @@
+<dialog class="modal" id="quick-add" aria-labelledby="quick-add-title">
+    <form method="post" action="{% url 'tasks:quick_add' %}" class="modal-card">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <header class="modal-head">
+            <div>
+                <p class="eyebrow">Quick capture</p>
+                <h2 id="quick-add-title">Add a task</h2>
+            </div>
+            <button type="button" class="icon-btn" data-close-dialog aria-label="Close">
+                <svg class="icon"><use href="#i-x"></use></svg>
+            </button>
+        </header>
+
+        <div class="field">
+            <label for="{{ quick_add_form.title.id_for_label }}">Task</label>
+            {{ quick_add_form.title }}
+        </div>
+        <div class="field-grid field-grid-3">
+            <div class="field">
+                <label for="{{ quick_add_form.due_date.id_for_label }}">Due</label>
+                {{ quick_add_form.due_date }}
+            </div>
+            <div class="field">
+                <label for="{{ quick_add_form.priority.id_for_label }}">Priority</label>
+                {{ quick_add_form.priority }}
+            </div>
+            <div class="field">
+                <label for="{{ quick_add_form.project.id_for_label }}">Project</label>
+                {{ quick_add_form.project }}
+            </div>
+        </div>
+
+        <footer class="modal-foot">
+            <span class="modal-hint">Press <kbd>Esc</kbd> to close</span>
+            <div class="btn-row">
+                <button type="button" class="btn btn-ghost" data-close-dialog>Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+                    Add task
+                </button>
+            </div>
+        </footer>
+    </form>
+</dialog>

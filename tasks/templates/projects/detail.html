@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }} — TaskNest{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'tasks:dashboard' %}">Dashboard</a>
+    <svg class="icon icon-xs" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
+    <a href="{% url 'tasks:projects' %}">Projects</a>
+    <svg class="icon icon-xs" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
+    <span>{{ project.name }}</span>
+</nav>
+
+<section class="page-head detail-head">
+    <div class="page-head-text">
+        <div class="detail-title-row">
+            <span class="project-avatar" style="--dot: {{ project.color_hex }}">{{ project.label|first|upper }}</span>
+            {% if project.code %}<span class="project-code">{{ project.code }}</span>{% endif %}
+            {% if project.is_archived %}<span class="status-pill">Archived</span>{% endif %}
+        </div>
+        <h1>{{ project.name }}</h1>
+        <p class="page-sub">{% if project.description %}{{ project.description }}{% else %}No description yet.{% endif %}</p>
+    </div>
+    <div class="page-actions">
+        <a class="btn btn-secondary" href="{% url 'tasks:projects' %}">All projects</a>
+        <a class="btn btn-primary" href="{% url 'tasks:add_task' %}?project={{ project.pk }}">
+            <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+            Add task
+        </a>
+    </div>
+</section>
+
+<div class="project-detail-grid">
+    <div class="project-detail-main">
+        <section class="panel">
+            <header class="panel-head">
+                <div>
+                    <p class="eyebrow">Overview</p>
+                    <h2>Progress</h2>
+                </div>
+                <span class="panel-badge">{{ progress }}%</span>
+            </header>
+            <div class="progress-ring" style="--value: {{ progress }}">
+                <span>{{ progress }}<small>%</small></span>
+            </div>
+            <div class="project-detail-stats">
+                <div><strong>{{ done_count }}</strong><span>Done</span></div>
+                <div><strong>{{ open_count }}</strong><span>Open</span></div>
+                <div><strong>{{ total_count }}</strong><span>Total</span></div>
+            </div>
+        </section>
+
+        <section class="panel">
+            <header class="panel-head">
+                <div>
+                    <p class="eyebrow">Open work</p>
+                    <h2>Tasks</h2>
+                </div>
+            </header>
+            {% for group in groups %}
+            <section class="task-group compact">
+                <header class="group-head">
+                    <h3>{{ group.label }}</h3>
+                    <span class="group-count">{{ group.tasks|length }}</span>
+                </header>
+                <div class="task-list">
+                    {% for task in group.tasks %}
+                        {% include "tasks/_task_row.html" with task=task %}
+                    {% endfor %}
+                </div>
+            </section>
+            {% empty %}
+            <div class="empty-inline">
+                <p>No open tasks in this project.</p>
+                <a class="btn btn-secondary btn-sm" href="{% url 'tasks:add_task' %}?project={{ project.pk }}">Add one</a>
+            </div>
+            {% endfor %}
+        </section>
+    </div>
+
+    <aside class="project-detail-rail">
+        <section class="panel">
+            <header class="panel-head">
+                <div>
+                    <p class="eyebrow">Recently done</p>
+                    <h2>Completed</h2>
+                </div>
+            </header>
+            <div class="related-list">
+                {% for task in completed_tasks %}
+                <a class="related-row" href="{% url 'tasks:task_detail' task.pk %}">
+                    <span class="priority-dot p-{{ task.priority }}"></span>
+                    <span class="related-title">{{ task.title }}</span>
+                    <span class="related-due tone-done">{{ task.humanized_due }}</span>
+                </a>
+                {% empty %}
+                <p class="muted-text">Nothing completed yet.</p>
+                {% endfor %}
+            </div>
+        </section>
+
+        <section class="panel">
+            <header class="panel-head">
+                <div>
+                    <p class="eyebrow">Manage</p>
+                    <h2>Project</h2>
+                </div>
+            </header>
+            <div class="project-manage">
+                <a class="btn btn-secondary btn-block" href="{% url 'tasks:project_edit' project.pk %}">
+                    <svg class="icon" aria-hidden="true"><use href="#i-edit"></use></svg>
+                    Edit project
+                </a>
+                <a class="btn btn-danger-ghost btn-block" href="{% url 'tasks:project_delete' project.pk %}">
+                    <svg class="icon" aria-hidden="true"><use href="#i-trash"></use></svg>
+                    Delete project
+                </a>
+            </div>
+        </section>
+    </aside>
+</div>
+{% endblock %}

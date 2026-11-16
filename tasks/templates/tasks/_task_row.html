@@ -1,0 +1,57 @@
+<article class="task-row {% if task.is_complete %}is-done{% endif %} task-{{ task.priority }}" data-task-row>
+    <form method="post" action="{% url 'tasks:complete_task' task.pk %}" class="check-form">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <button type="submit" class="check {% if task.is_complete %}is-checked{% endif %}" aria-label="{% if task.is_complete %}Reopen {{ task.title }}{% else %}Complete {{ task.title }}{% endif %}" aria-pressed="{% if task.is_complete %}true{% else %}false{% endif %}">
+            <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>
+        </button>
+    </form>
+
+    <div class="task-body">
+        <div class="task-title-line">
+            <a class="task-title" href="{% url 'tasks:task_detail' task.pk %}">{{ task.title }}</a>
+            {% if task.is_pinned %}
+            <span class="pin-mark" title="Pinned task">
+                <svg class="icon" aria-hidden="true"><use href="#i-pin"></use></svg>
+            </span>
+            {% endif %}
+        </div>
+        <div class="task-meta">
+            {% if task.project %}
+            <a class="project-chip" href="{% url 'tasks:project_detail' task.project.pk %}">
+                <span class="project-dot" style="--dot: {{ task.project.color_hex }}"></span>
+                {{ task.project.label }}
+            </a>
+            {% endif %}
+            <span class="meta-item tone-{{ task.due_tone }}">
+                <svg class="icon icon-xs" aria-hidden="true"><use href="#i-clock"></use></svg>
+                {{ task.humanized_due }}
+            </span>
+            {% if task.subtask_total %}
+            <span class="meta-item">
+                <svg class="icon icon-xs" aria-hidden="true"><use href="#i-list"></use></svg>
+                {{ task.subtask_done }}/{{ task.subtask_total }} steps
+            </span>
+            {% endif %}
+            <span class="priority-pill p-{{ task.priority }}">
+                <span class="priority-dot"></span>{{ task.get_priority_display }}
+            </span>
+        </div>
+    </div>
+
+    <div class="task-rail">
+        <form method="post" action="{% url 'tasks:toggle_pin' task.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <button type="submit" class="icon-btn icon-btn-sm {% if task.is_pinned %}is-on{% endif %}" title="{% if task.is_pinned %}Unpin{% else %}Pin{% endif %} task" aria-label="{% if task.is_pinned %}Unpin{% else %}Pin{% endif %} {{ task.title }}">
+                <svg class="icon"><use href="#i-pin"></use></svg>
+            </button>
+        </form>
+        <a class="icon-btn icon-btn-sm" href="{% url 'tasks:edit_task' task.pk %}" title="Edit task" aria-label="Edit {{ task.title }}">
+            <svg class="icon"><use href="#i-edit"></use></svg>
+        </a>
+        <a class="icon-btn icon-btn-sm danger" href="{% url 'tasks:delete_task' task.pk %}" title="Delete task" aria-label="Delete {{ task.title }}">
+            <svg class="icon"><use href="#i-trash"></use></svg>
+        </a>
+    </div>
+</article>

@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}{{ task.title }} — TaskNest{% endblock %}
+
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{% url 'tasks:dashboard' %}">Dashboard</a>
+    <svg class="icon icon-xs" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
+    {% if task.project %}
+    <a href="{% url 'tasks:project_detail' task.project.pk %}">{{ task.project.name }}</a>
+    <svg class="icon icon-xs" aria-hidden="true"><use href="#i-chevron-right"></use></svg>
+    {% endif %}
+    <span>Task #{{ task.pk }}</span>
+</nav>
+
+<section class="page-head detail-head">
+    <div class="page-head-text">
+        <div class="detail-title-row">
+            <span class="priority-pill p-{{ task.priority }}"><span class="priority-dot"></span>{{ task.get_priority_display }}</span>
+            {% if task.is_complete %}
+            <span class="status-pill is-done"><svg class="icon icon-xs"><use href="#i-check"></use></svg>Completed</span>
+            {% elif task.is_overdue %}
+            <span class="status-pill is-danger"><svg class="icon icon-xs"><use href="#i-alert"></use></svg>Overdue</span>
+            {% else %}
+            <span class="status-pill"><svg class="icon icon-xs"><use href="#i-clock"></use></svg>Open</span>
+            {% endif %}
+            {% if task.is_pinned %}<span class="status-pill is-pin"><svg class="icon icon-xs"><use href="#i-pin"></use></svg>Pinned</span>{% endif %}
+        </div>
+        <h1 class="{% if task.is_complete %}is-done-text{% endif %}">{{ task.title }}</h1>
+        <div class="detail-meta">
+            {% if task.project %}
+            <a class="project-chip" href="{% url 'tasks:project_detail' task.project.pk %}">
+                <span class="project-dot" style="--dot: {{ task.project.color_hex }}"></span>{{ task.project.name }}
+            </a>
+            {% endif %}
+            <span class="meta-item tone-{{ task.due_tone }}">
+                <svg class="icon icon-xs" aria-hidden="true"><use href="#i-clock"></use></svg>{{ task.humanized_due }}
+            </span>
+        </div>
+    </div>
+    <div class="page-actions detail-actions">
+        <form method="post" action="{% url 'tasks:complete_task' task.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <button type="submit" class="btn {% if task.is_complete %}btn-secondary{% else %}btn-primary{% endif %}">
+                <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>
+                {% if task.is_complete %}Reopen task{% else %}Mark complete{% endif %}
+            </button>
+        </form>
+        <form method="post" action="{% url 'tasks:toggle_pin' task.pk %}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.get_full_path }}">
+            <button type="submit" class="icon-btn {% if task.is_pinned %}is-on{% endif %}" title="{% if task.is_pinned %}Unpin{% else %}Pin{% endif %} task" aria-label="{% if task.is_pinned %}Unpin{% else %}Pin{% endif %} task">
+                <svg class="icon"><use href="#i-pin"></use></svg>
+            </button>
+        </form>
+        <a class="btn btn-secondary" href="{% url 'tasks:edit_task' task.pk %}">
+            <svg class="icon" aria-hidden="true"><use href="#i-edit"></use></svg>
+            Edit
+        </a>
+        <a class="btn btn-danger-ghost" href="{% url 'tasks:delete_task' task.pk %}">
+            <svg class="icon" aria-hidden="true"><use href="#i-trash"></use></svg>
+            Delete
+        </a>
+    </div>
+</section>
+
+<div class="detail-grid">
+    <div class="detail-main">
+        <section class="panel">
+            <header class="panel-head">
+                <div>
+                    <p class="eyebrow">Context</p>
+                    <h2>Notes</h2>
+                </div>
+            </header>
+            {% if task.description %}
+            <div class="prose">{{ task.description|linebreaks }}</div>
+            {% else %}
+            <p class="muted-text">No notes yet. <a href="{% url 'tasks:edit_task' task.pk %}">Add some context</a> so future-you remembers why this mattered.</p>
+            {% endif %}
+        </section>
+
+        <section class="panel">
+            <header class="panel-head">
+                <div>
+                    <p class="eyebrow">Checklist</p>
+                    <h2>Steps</h2>
+                </div>
+                {% if task.subtask_total %}
+                <span class="panel-badge">{{ task.subtask_done }}/{{ task.subtask_total }} done</span>
+                {% endif %}
+            </header>
+
+            {% if task.subtask_total %}
+            <div class="progress-bar checklist-progress"><span style="width: {{ task.subtask_percent }}%"></span></div>
+            {% endif %}
+
+            <div class="subtask-list">
+                {% for subtask in task.subtasks.all %}
+                <div class="subtask-row {% if subtask.is_done %}is-done{% endif %}">
+                    <form method="post" action="{% url 'tasks:subtask_toggle' task.pk subtask.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="check check-sm {% if subtask.is_done %}is-checked{% endif %}" aria-label="Toggle step {{ subtask.title }}">
+                            <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>
+                        </button>
+                    </form>
+                    <span class="subtask-title">{{ subtask.title }}</span>
+                    <form method="post" action="{% url 'tasks:subtask_delete' task.pk subtask.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="icon-btn icon-btn-sm danger" aria-label="Delete step {{ subtask.title }}">
+                            <svg class="icon"><use href="#i-x"></use></svg>
+                        </button>
+                    </form>
+                </div>
+                {% empty %}
+                <p class="muted-text">Break this task into small steps. Small steps are easier to start.</p>
+                {% endfor %}
+            </div>
+
+            <form method="post" action="{% url 'tasks:subtask_add' task.pk %}" class="subtask-add">
+                {% csrf_token %}
+                {{ subtask_form.title }}
+                <button type="submit" class="btn btn-secondary btn-sm">
+                    <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+                    Add step
+                </button>
+            </form>
+        </section>
+    </div>
+
+    <aside class="detail-rail">
+        <section class="panel">
+            <header class="panel-head">
+                <div>
+                    <p class="eyebrow">Overview</p>
+                    <h2>Details</h2>
+                </div>
+            </header>
+            <dl class="detail-list">
+                <div><dt>Due</dt><dd>{% if task.due_date %}{{ task.due_date|date:"M j, Y · g:i A" }}{% else %}<span class="muted-text">No deadline</span>{% endif %}</dd></div>
+                <div><dt>Priority</dt><dd><span class="priority-pill p-{{ task.priority }}"><span class="priority-dot"></span>{{ task.get_priority_display }}</span></dd></div>
+                <div><dt>Project</dt><dd>{% if task.project %}<a href="{% url 'tasks:project_detail' task.project.pk %}">{{ task.project.name }}</a>{% else %}<span class="muted-text">None</span>{% endif %}</dd></div>
+                <div><dt>Created</dt><dd>{{ task.created_at|date:"M j, Y" }}</dd></div>
+                <div><dt>Updated</dt><dd>{{ task.updated_at|date:"M j, Y · g:i A" }}</dd></div>
+                {% if task.completed_at %}
+                <div><dt>Completed</dt><dd>{{ task.completed_at|date:"M j, Y · g:i A" }}</dd></div>
+                {% endif %}
+            </dl>
+        </section>
+
+        {% if related_tasks %}
+        <section class="panel">
+            <header class="panel-head">
+                <div>
+                    <p class="eyebrow">Same project</p>
+                    <h2>Related work</h2>
+                </div>
+            </header>
+            <div class="related-list">
+                {% for related in related_tasks %}
+                <a class="related-row" href="{% url 'tasks:task_detail' related.pk %}">
+                    <span class="priority-dot p-{{ related.priority }}"></span>
+                    <span class="related-title">{{ related.title }}</span>
+                    <span class="related-due tone-{{ related.due_tone }}">{{ related.humanized_due }}</span>
+                </a>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+    </aside>
+</div>
+{% endblock %}
