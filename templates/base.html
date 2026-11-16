@@ -1,0 +1,44 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TaskNest{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="{% if user.is_authenticated and user.profile.dark_mode %}dark-mode{% endif %}">
+    {% block body %}
+    <nav class="navbar">
+        <a href="{% if user.is_authenticated %}{% url 'tasks:dashboard' %}{% else %}{% url 'accounts:login' %}{% endif %}" class="brand">TaskNest</a>
+        {% if user.is_authenticated %}
+        <div class="nav-links">
+            <a href="{% url 'tasks:dashboard' %}">Dashboard</a>
+            <a href="{% url 'tasks:add_task' %}">Add Task</a>
+            <a href="{% url 'accounts:profile' %}">Profile</a>
+            <a href="{% url 'accounts:settings' %}">Settings</a>
+            <form action="{% url 'accounts:logout' %}" method="post" class="inline-form">
+                {% csrf_token %}
+                <button type="submit" class="link-button">Logout</button>
+            </form>
+        </div>
+        {% endif %}
+    </nav>
+
+    <main class="container">
+        {% if messages %}
+            <ul class="messages">
+                {% for message in messages %}
+                    <li class="message {{ message.tags }}">{{ message }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        {% block content %}{% endblock %}
+    </main>
+    {% endblock %}
+</body>
+</html>

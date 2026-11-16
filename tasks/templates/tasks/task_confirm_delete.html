@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Delete task — TaskNest{% endblock %}
+{% block content %}
+<h1>Delete this task?</h1>
+<p class="subtitle">This can't be undone.</p>
+<div class="card">
+    <p style="margin: 0 0 20px;">"<strong>{{ object.title }}</strong>" will be removed from your list.</p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="btn-row">
+            <button type="submit" class="btn btn-danger">Delete task</button>
+            <a href="{% url 'tasks:dashboard' %}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

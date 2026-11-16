@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Log in — TaskNest{% endblock %}
+{% block body %}
+<div class="auth-shell">
+    <div class="auth-cover">
+        <div class="brand-mark">TaskNest</div>
+        <div>
+            <h1 class="cover-headline">Know what's due before it's late.</h1>
+            <p class="cover-sub">One list, sorted by what actually needs you next.</p>
+        </div>
+        <div></div>
+    </div>
+    <div class="auth-form-side">
+        <div class="auth-form-inner">
+            {% if messages %}
+                <ul class="messages">
+                    {% for message in messages %}<li class="message {{ message.tags }}">{{ message }}</li>{% endfor %}
+                </ul>
+            {% endif %}
+            <h1>Log in</h1>
+            <p class="subtitle">Pick up where you left off.</p>
+            <form method="post">
+                {% csrf_token %}
+                {% for field in form %}
+                <div class="field">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}<ul class="errorlist">{% for error in field.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+                </div>
+                {% endfor %}
+                {% if form.non_field_errors %}<ul class="errorlist">{% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+                <button type="submit" class="btn btn-primary" style="width:100%;">Log in</button>
+            </form>
+            <p class="auth-switch">New here? <a href="{% url 'accounts:register' %}">Create an account</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

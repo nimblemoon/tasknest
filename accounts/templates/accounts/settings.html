@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+{% block content %}
+<div class="settings-shell">
+  <div class="card settings-card">
+    <div class="section-heading compact">
+      <h2>Settings</h2>
+      <a href="{% url 'accounts:profile' %}" class="btn btn-secondary">Back to Profile</a>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="toggle-row">
+        {{ form.dark_mode }}
+        <label class="form-check-label" for="{{ form.dark_mode.id_for_label }}">Dark mode</label>
+      </div>
+      <div class="toggle-row">
+        {{ form.email_notifications }}
+        <label class="form-check-label" for="{{ form.email_notifications.id_for_label }}">Email notifications</label>
+      </div>
+      <div class="field">
+        <label for="{{ form.timezone.id_for_label }}">Timezone</label>
+        {{ form.timezone }}
+      </div>
+      <div class="btn-row">
+        <button type="submit" class="btn btn-primary">Save Settings</button>
+        <a href="{% url 'accounts:profile' %}" class="btn btn-secondary">Back</a>
+      </div>
+    </form>
+
+    <div class="settings-divider"></div>
+    <a href="{% url 'accounts:change_password' %}" class="btn btn-secondary">Change Password</a>
+  </div>
+</div>
+{% endblock %}

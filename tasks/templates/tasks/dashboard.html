@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — TaskNest{% endblock %}
+{% block content %}
+<div class="dashboard-header">
+    <div>
+        <h1>This week</h1>
+        <p class="subtitle">Sorted by what needs you next.</p>
+    </div>
+    <a href="{% url 'tasks:add_task' %}" class="btn btn-primary">+ New task</a>
+</div>
+
+<div class="stats-row">
+    <div class="stat-box">
+        <div class="stat-number">{{ pending_count }}</div>
+        <div class="stat-label">Pending</div>
+    </div>
+    <div class="stat-box">
+        <div class="stat-number">{{ completed_count }}</div>
+        <div class="stat-label">Done</div>
+    </div>
+</div>
+
+<form method="get" class="filter-bar">
+    <div class="field">
+        <label for="{{ filter_form.status.id_for_label }}">Status</label>
+        {{ filter_form.status }}
+    </div>
+    <div class="field">
+        <label for="{{ filter_form.priority.id_for_label }}">Priority</label>
+        {{ filter_form.priority }}
+    </div>
+    <div class="field">
+        <label for="{{ filter_form.sort.id_for_label }}">Sort</label>
+        {{ filter_form.sort }}
+    </div>
+    <button type="submit" class="btn btn-secondary">Apply</button>
+    <a href="{% url 'tasks:dashboard' %}" class="btn btn-secondary">Clear</a>
+</form>
+
+<div class="task-list">
+    {% for task in tasks %}
+    <div class="task-row priority-{{ task.priority }} {% if task.is_complete %}completed{% endif %}">
+        <form method="post" action="{% url 'tasks:complete_task' task.pk %}">
+            {% csrf_token %}
+            <input type="checkbox" class="task-checkbox" onchange="this.form.submit()" {% if task.is_complete %}checked{% endif %} aria-label="Mark {{ task.title }} as {% if task.is_complete %}not done{% else %}done{% endif %}">
+        </form>
+        <div class="task-main">
+            <div class="task-title {% if task.is_complete %}completed{% endif %}">{{ task.title }}</div>
+            <div class="task-meta {% if task.is_overdue %}due-overdue{% elif "today" in task.humanized_due %}due-today{% else %}due-normal{% endif %}">
+                {{ task.humanized_due }}
+            </div>
+        </div>
+        <div class="task-actions">
+            <a href="{% url 'tasks:edit_task' task.pk %}">Edit</a>
+            <a href="{% url 'tasks:delete_task' task.pk %}" class="danger">Delete</a>
+        </div>
+    </div>
+    {% empty %}
+    <div class="empty-state">
+        <p>Nothing here yet.</p>
+        <a href="{% url 'tasks:add_task' %}" class="btn btn-primary">Add your first task</a>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
