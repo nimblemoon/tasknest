@@ -60,7 +60,7 @@ class ProfileFormTests(TestCase):
 
 class SettingsFormTests(TestCase):
     def test_timezone_choice_is_saved(self):
-        profile = Profile.objects.create(user=User.objects.create_user(
+        profile, _ = Profile.objects.get_or_create(user=User.objects.create_user(
             username='bob', password='safe-password',
         ))
         form = SettingsForm(
@@ -87,7 +87,9 @@ class SettingsFormTests(TestCase):
 class ProfileTimezoneMiddlewareTests(TestCase):
     def test_activates_profile_timezone_for_authenticated_request(self):
         user = User.objects.create_user(username='carol', password='safe-password')
-        Profile.objects.create(user=user, timezone='Asia/Manila')
+        profile = user.profile
+        profile.timezone = 'Asia/Manila'
+        profile.save()
         request = RequestFactory().get('/')
         request.user = user
         middleware = ProfileTimezoneMiddleware(
