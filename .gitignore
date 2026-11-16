@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+
+# Local data and generated assets
+db.sqlite3
+media/
+staticfiles/
+
+# Workspace-only Copilot agents
+.github/agents/

@@ -4,8 +4,11 @@ Forms for the accounts app.
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, PasswordChangeForm
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 
 from .models import Profile
+
+MAX_AVATAR_SIZE = 2 * 1024 * 1024
 
 
 class LoginForm(AuthenticationForm):
@@ -60,7 +63,13 @@ class ProfileForm(forms.ModelForm):
         fields = ['bio', 'avatar']
         widgets = {
             'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'avatar': forms.ClearableFileInput(attrs={'class': 'form-control'}),
+            'avatar': forms.ClearableFileInput(attrs={
+                'class': 'form-control',
+                'accept': 'image/*',
+            }),
+        }
+        help_texts = {
+            'avatar': 'Choose an image no larger than 2 MB.',
         }
 
     def __init__(self, *args, **kwargs):
@@ -69,6 +78,12 @@ class ProfileForm(forms.ModelForm):
         if self.user:
             self.fields['first_name'].initial = self.user.first_name
             self.fields['last_name'].initial = self.user.last_name
+
+    def clean_avatar(self):
+        avatar = self.cleaned_data.get('avatar')
+        if avatar and avatar.size > MAX_AVATAR_SIZE:
+            raise ValidationError('The avatar must be no larger than 2 MB.')
+        return avatar
 
     def save(self, commit=True):
         profile = super().save(commit=commit)

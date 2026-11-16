@@ -3,7 +3,7 @@ Django settings for tasknest project.
 """
 
 from pathlib import Path
-from decouple import config
+from decouple import Csv, config
 import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -29,7 +29,11 @@ else:
         }
     }
 
-ALLOWED_HOSTS = ['*'] if DEBUG else []
+ALLOWED_HOSTS = (
+    ['*']
+    if DEBUG
+    else config('ALLOWED_HOSTS', default='localhost,127.0.0.1', cast=Csv())
+)
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -50,6 +54,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'tasknest.middleware.ProfileTimezoneMiddleware',
 ]
 
 ROOT_URLCONF = 'tasknest.urls'
