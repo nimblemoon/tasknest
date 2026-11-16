@@ -14,4 +14,5 @@ urlpatterns = [
     path('profile/', views.profile_view, name='profile'),
     path('settings/', views.settings_view, name='settings'),
     path('settings/password/', views.change_password_view, name='change_password'),
+    path('theme/', views.theme_toggle_view, name='theme_toggle'),
 ]

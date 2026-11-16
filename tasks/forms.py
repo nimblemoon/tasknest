@@ -1,17 +1,86 @@
 """
 Forms for the tasks app.
 """
-from django import forms
+from datetime import timedelta
 
-from .models import Task
+from django import forms
+from django.utils import timezone
+
+from .models import Project, Subtask, Task
+
+
+DATETIME_INPUT_FORMAT = '%Y-%m-%dT%H:%M'
+
+
+def _datetime_widget(placeholder=None):
+    attrs = {
+        'class': 'form-control',
+        'type': 'datetime-local',
+        'data-datetime': 'true',
+    }
+    if placeholder:
+        attrs['placeholder'] = placeholder
+    return forms.DateTimeInput(attrs=attrs, format=DATETIME_INPUT_FORMAT)
+
+
+class ProjectForm(forms.ModelForm):
+    """Create or edit a colour-coded project."""
+
+    class Meta:
+        model = Project
+        fields = ['name', 'code', 'description', 'color', 'is_archived']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g. Capstone Project',
+                'autofocus': True,
+            }),
+            'code': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g. CS101',
+                'maxlength': 8,
+            }),
+            'description': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'What is this project about?',
+            }),
+            'color': forms.RadioSelect(attrs={'class': 'color-radio'}),
+            'is_archived': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+    def __init__(self, *args, user=None, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+
+    def clean_name(self):
+        name = self.cleaned_data['name'].strip()
+        if not name:
+            raise forms.ValidationError('Give the project a name.')
+
+        duplicates = Project.objects.filter(owner=self.user, name__iexact=name)
+        if self.instance.pk:
+            duplicates = duplicates.exclude(pk=self.instance.pk)
+        if duplicates.exists():
+            raise forms.ValidationError('You already have a project with that name.')
+        return name
+
+    def clean_code(self):
+        return self.cleaned_data.get('code', '').strip().upper()
 
 
 class TaskForm(forms.ModelForm):
-    """Shared form for both creating and editing a Task (O1)."""
+    """Shared form for both creating and editing a Task."""
+
+    due_date = forms.DateTimeField(
+        required=False,
+        widget=_datetime_widget(),
+        input_formats=[DATETIME_INPUT_FORMAT, '%Y-%m-%dT%H:%M:%S', '%Y-%m-%d %H:%M'],
+        help_text='Leave blank for a task without a deadline.',
+    )
 
     class Meta:
         model = Task
-        fields = ['title', 'description', 'due_date', 'priority']
+        fields = ['title', 'description', 'project', 'due_date', 'priority']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -20,43 +89,128 @@ class TaskForm(forms.ModelForm):
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
-                'rows': 3,
-                'placeholder': 'Optional details...',
+                'rows': 4,
+                'placeholder': 'Optional notes, links, or context...',
             }),
-            'due_date': forms.DateTimeInput(attrs={
-                'class': 'form-control',
-                'type': 'datetime-local',
-            }),
+            'project': forms.Select(attrs={'class': 'form-control'}),
             'priority': forms.Select(attrs={'class': 'form-control'}),
         }
 
+    def __init__(self, *args, user=None, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+        projects = Project.objects.filter(owner=user, is_archived=False)
+        self.fields['project'].queryset = projects
+        self.fields['project'].required = False
+        self.fields['project'].empty_label = 'No project'
+        self.fields['priority'].help_text = (
+            'High priority tasks are flagged first on the dashboard.'
+        )
 
-class TaskFilterForm(forms.Form):
-    """Non-model form powering the Filter/Sort view (O4)."""
 
-    STATUS_CHOICES = [
-        ('', 'All statuses'),
-        ('pending', 'Pending'),
+class QuickAddForm(forms.ModelForm):
+    """Compact form used by the global quick-add dialog."""
+
+    due_date = forms.DateTimeField(
+        required=False,
+        widget=_datetime_widget(),
+        input_formats=[DATETIME_INPUT_FORMAT, '%Y-%m-%dT%H:%M', '%Y-%m-%d %H:%M'],
+    )
+
+    class Meta:
+        model = Task
+        fields = ['title', 'due_date', 'priority', 'project']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'What needs to get done?',
+                'autocomplete': 'off',
+                'autofocus': True,
+            }),
+            'priority': forms.Select(attrs={'class': 'form-control'}),
+            'project': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, user=None, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+        self.fields['project'].queryset = Project.objects.filter(
+            owner=user, is_archived=False,
+        )
+        self.fields['project'].required = False
+        self.fields['project'].empty_label = 'No project'
+        if not self.is_bound and not self.initial.get('due_date'):
+            local_now = timezone.localtime()
+            default_due = local_now.replace(hour=17, minute=0, second=0, microsecond=0)
+            if default_due < local_now:
+                default_due += timedelta(days=1)
+            self.initial['due_date'] = default_due
+
+
+class SubtaskForm(forms.ModelForm):
+    class Meta:
+        model = Subtask
+        fields = ['title']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Add a step...',
+                'autocomplete': 'off',
+                'maxlength': 200,
+            }),
+        }
+
+
+class DashboardFilterForm(forms.Form):
+    """Validated controls for the dashboard's smart views and search."""
+
+    VIEW_CHOICES = [
+        ('all', 'All'),
+        ('today', 'Today'),
+        ('upcoming', 'Upcoming'),
+        ('overdue', 'Overdue'),
+        ('someday', 'No date'),
         ('completed', 'Completed'),
     ]
-    PRIORITY_CHOICES = [('', 'All priorities')] + list(Task.Priority.choices)
+    PRIORITY_CHOICES = [('', 'Any priority')] + list(Task.Priority.choices)
     SORT_CHOICES = [
-        ('due_date', 'Due date (soonest first)'),
-        ('-priority', 'Priority (highest first)'),
+        ('due', 'Due date (soonest)'),
+        ('-priority', 'Priority (highest)'),
+        ('-created', 'Newest first'),
+        ('title', 'Title (A–Z)'),
     ]
 
-    status = forms.ChoiceField(
-        choices=STATUS_CHOICES,
-        required=False,
-        widget=forms.Select(attrs={'class': 'form-control sleek-select'}),
+    view = forms.ChoiceField(
+        choices=VIEW_CHOICES, required=False,
+        widget=forms.Select(attrs={'class': 'form-control'}),
     )
     priority = forms.ChoiceField(
-        choices=PRIORITY_CHOICES,
-        required=False,
-        widget=forms.Select(attrs={'class': 'form-control sleek-select'}),
+        choices=PRIORITY_CHOICES, required=False,
+        widget=forms.Select(attrs={'class': 'form-control'}),
     )
     sort = forms.ChoiceField(
-        choices=SORT_CHOICES,
-        required=False,
-        widget=forms.Select(attrs={'class': 'form-control sleek-select'}),
+        choices=SORT_CHOICES, required=False,
+        widget=forms.Select(attrs={'class': 'form-control'}),
     )
+    q = forms.CharField(
+        required=False, max_length=120,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Search tasks...',
+            'autocomplete': 'off',
+        }),
+    )
+
+    def __init__(self, *args, user=None, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+        self.fields['project'] = forms.ModelChoiceField(
+            queryset=Project.objects.filter(owner=user, is_archived=False),
+            required=False,
+            empty_label='All projects',
+            widget=forms.Select(attrs={'class': 'form-control'}),
+        )
+
+    def project_id(self):
+        project = self.cleaned_data.get('project') if self.is_valid() else None
+        return project.pk if project else ''
