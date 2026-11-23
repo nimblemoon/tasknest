@@ -8,6 +8,8 @@ dashboard can stay fast while still feeling like a real workspace.
 """
 from django.conf import settings
 from django.db import models
+from datetime import date, datetime, timedelta
+
 from django.utils import timezone
 
 
@@ -173,6 +175,25 @@ class Task(models.Model):
     )
     is_complete = models.BooleanField(default=False)
     is_pinned = models.BooleanField(default=False)
+    recurrence = models.CharField(
+        max_length=12,
+        choices=[
+            ('none', 'Does not repeat'),
+            ('daily', 'Daily'),
+            ('weekly', 'Weekly'),
+            ('monthly', 'Monthly'),
+        ],
+        default='none',
+    )
+    recurrence_interval = models.PositiveIntegerField(default=1)
+    recurrence_end_date = models.DateField(null=True, blank=True)
+    recurrence_root = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='occurrences',
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     completed_at = models.DateTimeField(null=True, blank=True)
@@ -287,6 +308,61 @@ class Task(models.Model):
         self.is_complete = True
         self.completed_at = timezone.now()
         self.save(update_fields=['is_complete', 'completed_at', 'updated_at'])
+        self._spawn_next_occurrence()
+
+    def _spawn_next_occurrence(self):
+        """Create the next occurrence of a recurring task, if applicable."""
+        if self.recurrence == 'none' or not self.due_date:
+            return
+
+        root = self.recurrence_root or self
+        if root.pk != self.pk and self.recurrence_root is None:
+            root = self
+
+        local_due = timezone.localtime(self.due_date)
+        base_date = local_due.date()
+        interval = self.recurrence_interval or 1
+
+        if self.recurrence == 'daily':
+            next_date = base_date + timedelta(days=interval)
+        elif self.recurrence == 'weekly':
+            next_date = base_date + timedelta(weeks=interval)
+        elif self.recurrence == 'monthly':
+            month_index = base_date.month - 1 + interval
+            year = base_date.year + month_index // 12
+            month = month_index % 12 + 1
+            import calendar as _calendar
+            day = min(base_date.day, _calendar.monthrange(year, month)[1])
+            next_date = date(year, month, day)
+        else:
+            return
+
+        if self.recurrence_end_date and next_date > self.recurrence_end_date:
+            return
+
+        if Task.objects.filter(recurrence_root=root, due_date__date=next_date).exists():
+            return
+
+        if self.recurrence_root is None:
+            self.recurrence_root = self
+            self.save(update_fields=['recurrence_root', 'updated_at'])
+            root = self
+
+        next_due = datetime.combine(next_date, local_due.timetz())
+        new_task = Task.objects.create(
+            owner=self.owner,
+            project=self.project,
+            title=self.title,
+            description=self.description,
+            due_date=next_due,
+            priority=self.priority,
+            is_pinned=self.is_pinned,
+            recurrence=self.recurrence,
+            recurrence_interval=self.recurrence_interval,
+            recurrence_end_date=self.recurrence_end_date,
+            recurrence_root=root,
+        )
+        new_task.tags.set(self.tags.all())
 
     def mark_incomplete(self):
         """Revert a completed task back to pending."""

@@ -59,6 +59,25 @@
             <div class="helptext">Hold Ctrl/Cmd to select more than one.</div>
         </div>
 
+        <div class="field-grid field-grid-3">
+            <div class="field">
+                <label for="{{ form.recurrence.id_for_label }}">Repeats</label>
+                {{ form.recurrence }}
+                {% if form.recurrence.errors %}<ul class="errorlist">{% for error in form.recurrence.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            <div class="field">
+                <label for="{{ form.recurrence_interval.id_for_label }}">Every</label>
+                {{ form.recurrence_interval }}
+                {% if form.recurrence_interval.errors %}<ul class="errorlist">{% for error in form.recurrence_interval.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+            </div>
+            <div class="field">
+                <label for="{{ form.recurrence_end_date.id_for_label }}">Ends on</label>
+                {{ form.recurrence_end_date }}
+                {% if form.recurrence_end_date.errors %}<ul class="errorlist">{% for error in form.recurrence_end_date.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+                <div class="helptext">Optional stop date.</div>
+            </div>
+        </div>
+
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">
                 <svg class="icon" aria-hidden="true"><use href="#i-check"></use></svg>

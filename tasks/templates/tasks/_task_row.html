@@ -42,6 +42,12 @@
             <span class="priority-pill p-{{ task.priority }}">
                 <span class="priority-dot"></span>{{ task.get_priority_display }}
             </span>
+            {% if task.recurrence != 'none' %}
+            <span class="meta-item">
+                <svg class="icon icon-xs" aria-hidden="true"><use href="#i-reset"></use></svg>
+                Repeats {{ task.get_recurrence_display|lower }}
+            </span>
+            {% endif %}
         </div>
     </div>
 

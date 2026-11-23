@@ -80,7 +80,7 @@ class TaskForm(forms.ModelForm):
 
     class Meta:
         model = Task
-        fields = ['title', 'description', 'project', 'tags', 'due_date', 'priority']
+        fields = ['title', 'description', 'project', 'tags', 'due_date', 'priority', 'recurrence', 'recurrence_interval', 'recurrence_end_date']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -95,6 +95,9 @@ class TaskForm(forms.ModelForm):
             'project': forms.Select(attrs={'class': 'form-control'}),
             'tags': forms.SelectMultiple(attrs={'class': 'form-control', 'size': '4'}),
             'priority': forms.Select(attrs={'class': 'form-control'}),
+            'recurrence': forms.Select(attrs={'class': 'form-control'}),
+            'recurrence_interval': forms.NumberInput(attrs={'class': 'form-control', 'min': 1}),
+            'recurrence_end_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
         }
 
     def __init__(self, *args, user=None, **kwargs):
@@ -109,6 +112,17 @@ class TaskForm(forms.ModelForm):
         self.fields['priority'].help_text = (
             'High priority tasks are flagged first on the dashboard.'
         )
+
+    def clean(self):
+        cleaned = super().clean()
+        recurrence = cleaned.get('recurrence') or 'none'
+        due_date = cleaned.get('due_date')
+        if recurrence != 'none' and not due_date:
+            self.add_error('due_date', 'Recurring tasks need a due date.')
+        interval = cleaned.get('recurrence_interval')
+        if interval is not None and interval < 1:
+            self.add_error('recurrence_interval', 'Interval must be at least 1.')
+        return cleaned
 
 
 class QuickAddForm(forms.ModelForm):
