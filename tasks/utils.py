@@ -71,6 +71,8 @@ def apply_task_filters(
             | Q(description__icontains=q)
             | Q(project__name__icontains=q)
             | Q(subtasks__title__icontains=q)
+            | Q(tags__name__icontains=q)
+            | Q(comments__body__icontains=q)
         ).distinct()
 
     queryset = queryset.annotate(_priority_weight=_PRIORITY_CASE)
