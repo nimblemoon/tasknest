@@ -21,6 +21,7 @@ from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DeleteView, UpdateView
 
 from .forms import (
+    CommentForm,
     DashboardFilterForm,
     ProjectForm,
     QuickAddForm,
@@ -28,7 +29,7 @@ from .forms import (
     TagForm,
     TaskForm,
 )
-from .models import Project, Subtask, Tag, Task
+from .models import Project, Subtask, Tag, Task, TaskComment
 from .utils import (
     apply_task_filters,
     base_task_queryset,
@@ -210,6 +211,8 @@ def task_detail_view(request, pk):
     return render(request, 'tasks/task_detail.html', {
         'task': task,
         'subtask_form': SubtaskForm(),
+        'comment_form': CommentForm(),
+        'comments': task.comments.select_related('author'),
         'related_tasks': related,
     })
 
@@ -505,6 +508,38 @@ def tag_delete_view(request, pk):
         messages.success(request, f'Tag "{name}" deleted.')
         return redirect('tasks:tags')
     return render(request, 'tags/confirm_delete.html', {'tag': tag})
+
+
+# ---------------------------------------------------------------------------
+# Comments
+# ---------------------------------------------------------------------------
+
+@login_required
+@require_POST
+def comment_add_view(request, pk):
+    task = get_object_or_404(Task, pk=pk, owner=request.user)
+    form = CommentForm(request.POST)
+    if form.is_valid():
+        comment = form.save(commit=False)
+        comment.task = task
+        comment.author = request.user
+        comment.save()
+        messages.success(request, 'Note added.')
+    else:
+        messages.error(request, 'Could not add note.')
+    return redirect('tasks:task_detail', pk=task.pk)
+
+
+@login_required
+@require_POST
+def comment_delete_view(request, pk, comment_pk):
+    comment = get_object_or_404(
+        TaskComment, pk=comment_pk, task_id=pk, task__owner=request.user,
+    )
+    task_id = comment.task_id
+    comment.delete()
+    messages.info(request, 'Note removed.')
+    return redirect('tasks:task_detail', pk=task_id)
 
 
 # ---------------------------------------------------------------------------

@@ -35,6 +35,17 @@
             <span class="meta-item tone-{{ task.due_tone }}">
                 <svg class="icon icon-xs" aria-hidden="true"><use href="#i-clock"></use></svg>{{ task.humanized_due }}
             </span>
+            {% for tag in task.tags.all %}
+            <span class="tag-chip" style="--dot: {{ tag.color_hex }}">
+                <span class="tag-dot" style="background: {{ tag.color_hex }}"></span>{{ tag.name }}
+            </span>
+            {% endfor %}
+            {% if task.recurrence != 'none' %}
+            <span class="meta-item">
+                <svg class="icon icon-xs" aria-hidden="true"><use href="#i-reset"></use></svg>
+                Repeats {{ task.get_recurrence_display|lower }}{% if task.recurrence_end_date %} until {{ task.recurrence_end_date }}{% endif %}
+            </span>
+            {% endif %}
         </div>
     </div>
     <div class="page-actions detail-actions">
@@ -123,6 +134,43 @@
                 <button type="submit" class="btn btn-secondary btn-sm">
                     <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
                     Add step
+                </button>
+            </form>
+        </section>
+
+        <section class="panel">
+            <header class="panel-head">
+                <div>
+                    <p class="eyebrow">Notes</p>
+                    <h2>Activity & comments</h2>
+                </div>
+            </header>
+            <div class="comment-list">
+                {% for comment in comments %}
+                <article class="comment-row">
+                    <div class="comment-head">
+                        <strong>{{ comment.author.get_full_name|default:comment.author.username }}</strong>
+                        <span class="muted-text">{{ comment.created_at|date:"M j, Y g:i A" }}</span>
+                        <form method="post" action="{% url 'tasks:comment_delete' task.pk comment.pk %}" class="comment-delete">
+                            {% csrf_token %}
+                            <button type="submit" class="icon-btn icon-btn-sm danger" aria-label="Delete note">
+                                <svg class="icon"><use href="#i-x"></use></svg>
+                            </button>
+                        </form>
+                    </div>
+                    <div class="comment-body">{{ comment.body|linebreaks }}</div>
+                </article>
+                {% empty %}
+                <p class="muted-text">No notes yet. Leave a breadcrumb for future-you.</p>
+                {% endfor %}
+            </div>
+            <form method="post" action="{% url 'tasks:comment_add' task.pk %}" class="comment-add">
+                {% csrf_token %}
+                {{ comment_form.body }}
+                {% if comment_form.body.errors %}<ul class="errorlist">{% for error in comment_form.body.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+                <button type="submit" class="btn btn-secondary btn-sm">
+                    <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+                    Add note
                 </button>
             </form>
         </section>

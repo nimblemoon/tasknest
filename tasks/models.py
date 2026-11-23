@@ -371,6 +371,29 @@ class Task(models.Model):
         self.save(update_fields=['is_complete', 'completed_at', 'updated_at'])
 
 
+class TaskComment(models.Model):
+    """A note left on a task by its owner."""
+
+    task = models.ForeignKey(
+        Task,
+        on_delete=models.CASCADE,
+        related_name='comments',
+    )
+    author = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='task_comments',
+    )
+    body = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['created_at']
+
+    def __str__(self):
+        return f'Comment by {self.author} on {self.task}'
+
+
 class Subtask(models.Model):
     """A checklist item inside a task."""
 

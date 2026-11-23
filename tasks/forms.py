@@ -6,7 +6,7 @@ from datetime import timedelta
 from django import forms
 from django.utils import timezone
 
-from .models import Project, Subtask, Tag, Task
+from .models import Project, Subtask, Tag, Task, TaskComment
 
 
 DATETIME_INPUT_FORMAT = '%Y-%m-%dT%H:%M'
@@ -268,3 +268,22 @@ class TagForm(forms.ModelForm):
         if duplicates.exists():
             raise forms.ValidationError('You already have a tag with that name.')
         return name
+
+
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = TaskComment
+        fields = ['body']
+        widgets = {
+            'body': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Add a note, link, or update...',
+            }),
+        }
+
+    def clean_body(self):
+        body = self.cleaned_data['body'].strip()
+        if not body:
+            raise forms.ValidationError('Write something first.')
+        return body

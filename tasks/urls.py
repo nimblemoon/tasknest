@@ -28,6 +28,8 @@ urlpatterns = [
     path('projects/<int:pk>/delete/', views.project_delete_view, name='project_delete'),
 
     path('<int:pk>/', views.task_detail_view, name='task_detail'),
+    path('<int:pk>/comments/add/', views.comment_add_view, name='comment_add'),
+    path('<int:pk>/comments/<int:comment_pk>/delete/', views.comment_delete_view, name='comment_delete'),
     path('<int:pk>/edit/', views.EditTaskView.as_view(), name='edit_task'),
     path('<int:pk>/delete/', views.DeleteTaskView.as_view(), name='delete_task'),
     path('<int:pk>/complete/', views.complete_task_view, name='complete_task'),
