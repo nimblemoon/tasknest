@@ -2198,3 +2198,9 @@ kbd {
    ========================================================================== */
 
 body { background: var(--bg); color: var(--ink); }
+
+.tag-chip { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:999px; background: var(--line); font-size:12px; }
+.tag-dot { width:6px; height:6px; border-radius:50%; }
+.tag-grid { display:grid; grid-template-columns: repeat(auto-fill,minmax(200px,1fr)); gap:12px; }
+.tag-card { display:flex; align-items:center; gap:10px; padding:12px; border:1px solid var(--line); border-radius:12px; }
+

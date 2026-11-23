@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Edit tag — TaskNest{% endblock %}
+
+{% block content %}
+<section class="page-head">
+    <div class="page-head-text">
+        <p class="eyebrow">Organise</p>
+        <h1>{{ form_heading }}</h1>
+        <p class="page-sub">Rename or recolour this tag.</p>
+    </div>
+</section>
+
+<form method="post" class="form-card">
+    {% csrf_token %}
+    <div class="field">
+        <label for="{{ form.name.id_for_label }}">Name</label>
+        {{ form.name }}
+        {% if form.name.errors %}<ul class="errorlist">{% for error in form.name.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+    </div>
+
+    <div class="field">
+        <label>Colour</label>
+        <div class="color-picker">
+            {% for choice in color_choices %}
+            <label class="color-choice">
+                <input type="radio" name="color" value="{{ choice.value }}" {% if form.color.value == choice.value or not form.color.value and forloop.first %}checked{% endif %}>
+                <span class="color-swatch" style="background: {{ choice.hex }}"></span>
+                <span>{{ choice.label }}</span>
+            </label>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="btn-row">
+        <a class="btn btn-ghost" href="{% url 'tasks:tags' %}">Cancel</a>
+        <button type="submit" class="btn btn-primary">{{ submit_label }}</button>
+    </div>
+</form>
+{% endblock %}

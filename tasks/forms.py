@@ -6,7 +6,7 @@ from datetime import timedelta
 from django import forms
 from django.utils import timezone
 
-from .models import Project, Subtask, Task
+from .models import Project, Subtask, Tag, Task
 
 
 DATETIME_INPUT_FORMAT = '%Y-%m-%dT%H:%M'
@@ -80,7 +80,7 @@ class TaskForm(forms.ModelForm):
 
     class Meta:
         model = Task
-        fields = ['title', 'description', 'project', 'due_date', 'priority']
+        fields = ['title', 'description', 'project', 'tags', 'due_date', 'priority']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -93,6 +93,7 @@ class TaskForm(forms.ModelForm):
                 'placeholder': 'Optional notes, links, or context...',
             }),
             'project': forms.Select(attrs={'class': 'form-control'}),
+            'tags': forms.SelectMultiple(attrs={'class': 'form-control', 'size': '4'}),
             'priority': forms.Select(attrs={'class': 'form-control'}),
         }
 
@@ -103,6 +104,8 @@ class TaskForm(forms.ModelForm):
         self.fields['project'].queryset = projects
         self.fields['project'].required = False
         self.fields['project'].empty_label = 'No project'
+        self.fields['tags'].queryset = Tag.objects.filter(owner=user)
+        self.fields['tags'].required = False
         self.fields['priority'].help_text = (
             'High priority tasks are flagged first on the dashboard.'
         )
@@ -210,7 +213,44 @@ class DashboardFilterForm(forms.Form):
             empty_label='All projects',
             widget=forms.Select(attrs={'class': 'form-control'}),
         )
+        self.fields['tag'] = forms.ModelChoiceField(
+            queryset=Tag.objects.filter(owner=user),
+            required=False,
+            empty_label='All tags',
+            widget=forms.Select(attrs={'class': 'form-control'}),
+        )
 
     def project_id(self):
         project = self.cleaned_data.get('project') if self.is_valid() else None
         return project.pk if project else ''
+
+
+class TagForm(forms.ModelForm):
+    """Create or edit a label."""
+
+    class Meta:
+        model = Tag
+        fields = ['name', 'color']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g. Study, Errand',
+                'autofocus': True,
+            }),
+            'color': forms.RadioSelect(attrs={'class': 'color-radio'}),
+        }
+
+    def __init__(self, *args, user=None, **kwargs):
+        self.user = user
+        super().__init__(*args, **kwargs)
+
+    def clean_name(self):
+        name = self.cleaned_data['name'].strip()
+        if not name:
+            raise forms.ValidationError('Give the tag a name.')
+        duplicates = Tag.objects.filter(owner=self.user, name__iexact=name)
+        if self.instance.pk:
+            duplicates = duplicates.exclude(pk=self.instance.pk)
+        if duplicates.exists():
+            raise forms.ValidationError('You already have a tag with that name.')
+        return name

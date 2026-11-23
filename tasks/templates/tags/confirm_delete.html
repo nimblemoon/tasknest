@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Delete tag — TaskNest{% endblock %}
+
+{% block content %}
+<section class="page-head">
+    <div class="page-head-text">
+        <p class="eyebrow">Organise</p>
+        <h1>Delete tag</h1>
+        <p class="page-sub">Are you sure you want to delete "{{ tag.name }}"? Tasks keep their other tags.</p>
+    </div>
+</section>
+
+<form method="post" class="form-card">
+    {% csrf_token %}
+    <div class="btn-row">
+        <a class="btn btn-ghost" href="{% url 'tasks:tags' %}">Cancel</a>
+        <button type="submit" class="btn btn-danger">Delete tag</button>
+    </div>
+</form>
+{% endblock %}

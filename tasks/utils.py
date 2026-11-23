@@ -26,7 +26,7 @@ def base_task_queryset(user):
     return (
         Task.objects.filter(owner=user)
         .select_related('project')
-        .prefetch_related('subtasks')
+        .prefetch_related('subtasks', 'tags')
     )
 
 
@@ -35,6 +35,7 @@ def apply_task_filters(
     view='all',
     priority='',
     project_id=None,
+    tag_id=None,
     q='',
     sort='due',
 ):
@@ -60,6 +61,9 @@ def apply_task_filters(
 
     if project_id:
         queryset = queryset.filter(project_id=project_id)
+
+    if tag_id:
+        queryset = queryset.filter(tags__id=tag_id)
 
     if q:
         queryset = queryset.filter(

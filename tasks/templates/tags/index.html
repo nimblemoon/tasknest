@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Tags — TaskNest{% endblock %}
+
+{% block content %}
+<section class="page-head">
+    <div class="page-head-text">
+        <p class="eyebrow">Organise</p>
+        <h1>Tags</h1>
+        <p class="page-sub">Lightweight labels you can attach to any task. Use them for context, energy level, or course.</p>
+    </div>
+    <div class="page-actions">
+        <button type="button" class="btn btn-primary" data-open-dialog="tag-dialog">
+            <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+            New tag
+        </button>
+    </div>
+</section>
+
+{% if tags %}
+<div class="tag-grid">
+    {% for tag in tags %}
+    <article class="tag-card" style="--accent: {{ tag.color_hex }}">
+        <span class="tag-dot" style="background: {{ tag.color_hex }}"></span>
+        <div class="tag-card-body">
+            <h2>{{ tag.name }}</h2>
+            <p class="muted-text">{{ tag.task_count }} task{{ tag.task_count|pluralize }}</p>
+        </div>
+        <div class="tag-card-actions">
+            <a class="icon-btn icon-btn-sm" href="{% url 'tasks:tag_edit' tag.pk %}" aria-label="Edit {{ tag.name }}">
+                <svg class="icon"><use href="#i-edit"></use></svg>
+            </a>
+            <a class="icon-btn icon-btn-sm danger" href="{% url 'tasks:tag_delete' tag.pk %}" aria-label="Delete {{ tag.name }}">
+                <svg class="icon"><use href="#i-trash"></use></svg>
+            </a>
+        </div>
+    </article>
+    {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+    <span class="empty-mark"><svg class="icon"><use href="#i-tag"></use></svg></span>
+    <h2>No tags yet</h2>
+    <p>Create a label and attach it to tasks for an extra layer of organisation.</p>
+    <button type="button" class="btn btn-primary" data-open-dialog="tag-dialog">
+        <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+        Create your first tag
+    </button>
+</div>
+{% endif %}
+
+<dialog class="modal" id="tag-dialog" aria-labelledby="tag-dialog-title">
+    <form method="post" action="{% url 'tasks:tag_create' %}" class="modal-card">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <header class="modal-head">
+            <div>
+                <p class="eyebrow">New tag</p>
+                <h2 id="tag-dialog-title">Create a tag</h2>
+            </div>
+            <button type="button" class="icon-btn" data-close-dialog aria-label="Close">
+                <svg class="icon"><use href="#i-x"></use></svg>
+            </button>
+        </header>
+
+        <div class="field">
+            <label for="{{ form.name.id_for_label }}">Name</label>
+            {{ form.name }}
+            {% if form.name.errors %}<ul class="errorlist">{% for error in form.name.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+        </div>
+
+        <div class="field">
+            <label>Colour</label>
+            <div class="color-picker">
+                {% for choice in color_choices %}
+                <label class="color-choice">
+                    <input type="radio" name="color" value="{{ choice.value }}" {% if form.color.value == choice.value or not form.color.value and forloop.first %}checked{% endif %}>
+                    <span class="color-swatch" style="background: {{ choice.hex }}"></span>
+                    <span>{{ choice.label }}</span>
+                </label>
+                {% endfor %}
+            </div>
+            {% if form.color.errors %}<ul class="errorlist">{% for error in form.color.errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+        </div>
+
+        <footer class="modal-foot">
+            <div class="btn-row">
+                <button type="button" class="btn btn-ghost" data-close-dialog>Cancel</button>
+                <button type="submit" class="btn btn-primary">
+                    <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+                    Create tag
+                </button>
+            </div>
+        </footer>
+    </form>
+</dialog>
+{% endblock %}

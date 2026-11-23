@@ -25,9 +25,10 @@ from .forms import (
     ProjectForm,
     QuickAddForm,
     SubtaskForm,
+    TagForm,
     TaskForm,
 )
-from .models import Project, Subtask, Task
+from .models import Project, Subtask, Tag, Task
 from .utils import (
     apply_task_filters,
     base_task_queryset,
@@ -84,6 +85,7 @@ def _dashboard_context(request):
         view=view,
         priority=data.get('priority', ''),
         project_id=data.get('project').pk if data.get('project') else None,
+        tag_id=data.get('tag').pk if data.get('tag') else None,
         q=data.get('q', '').strip(),
         sort=data.get('sort') or 'due',
     )
@@ -438,6 +440,71 @@ def project_delete_view(request, pk):
         'project': project,
         'task_count': project.tasks.count(),
     })
+
+
+# ---------------------------------------------------------------------------
+# Tags
+# ---------------------------------------------------------------------------
+
+@login_required
+def tags_view(request):
+    tags = (
+        Tag.objects.filter(owner=request.user)
+        .annotate(task_count=Count('tasks', distinct=True))
+        .order_by('name')
+    )
+    return render(request, 'tags/index.html', {
+        'tags': tags,
+        'form': TagForm(user=request.user),
+        'color_choices': _color_choices(),
+        'stats': dashboard_stats(request.user),
+    })
+
+
+@login_required
+def tag_create_view(request):
+    if request.method != 'POST':
+        return redirect('tasks:tags')
+    form = TagForm(request.POST, user=request.user)
+    if form.is_valid():
+        tag = form.save(commit=False)
+        tag.owner = request.user
+        tag.save()
+        messages.success(request, f'Tag "{tag.name}" created.')
+        return redirect('tasks:tags')
+    messages.error(request, 'Could not create tag. Check the name and try again.')
+    return redirect('tasks:tags')
+
+
+@login_required
+def tag_edit_view(request, pk):
+    tag = get_object_or_404(Tag, pk=pk, owner=request.user)
+    if request.method == 'POST':
+        form = TagForm(request.POST, instance=tag, user=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Tag updated.')
+            return redirect('tasks:tags')
+    else:
+        form = TagForm(instance=tag, user=request.user)
+    return render(request, 'tags/form.html', {
+        'form': form,
+        'tag': tag,
+        'form_heading': 'Edit tag',
+        'submit_label': 'Save tag',
+        'color_choices': _color_choices(),
+    })
+
+
+@login_required
+def tag_delete_view(request, pk):
+    tag = get_object_or_404(Tag, pk=pk, owner=request.user)
+    if request.method == 'POST':
+        name = tag.name
+        tag.delete()
+        messages.success(request, f'Tag "{name}" deleted.')
+        return redirect('tasks:tags')
+    return render(request, 'tags/confirm_delete.html', {'tag': tag})
 
 
 # ---------------------------------------------------------------------------

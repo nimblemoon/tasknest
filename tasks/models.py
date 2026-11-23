@@ -91,6 +91,49 @@ class Project(models.Model):
         return round(self.done_tasks * 100 / total)
 
 
+class Tag(models.Model):
+    """A free-form label that can be attached to many tasks."""
+
+    class Color(models.TextChoices):
+        EMERALD = 'emerald', 'Emerald'
+        CORAL = 'coral', 'Coral'
+        AMBER = 'amber', 'Amber'
+        BLUE = 'blue', 'Blue'
+        VIOLET = 'violet', 'Violet'
+        SLATE = 'slate', 'Slate'
+
+    COLOR_HEX = Project.COLOR_HEX
+
+    owner = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='tags',
+    )
+    name = models.CharField(max_length=40)
+    color = models.CharField(
+        max_length=12,
+        choices=Color.choices,
+        default=Color.EMERALD,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['name']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['owner', 'name'],
+                name='unique_tag_name_per_owner',
+            ),
+        ]
+
+    def __str__(self):
+        return self.name
+
+    @property
+    def color_hex(self):
+        return self.COLOR_HEX.get(self.color, self.COLOR_HEX[Project.Color.EMERALD])
+
+
 class Task(models.Model):
     """A single to-do item belonging to a user.
 
@@ -112,6 +155,11 @@ class Task(models.Model):
         Project,
         on_delete=models.SET_NULL,
         null=True,
+        blank=True,
+        related_name='tasks',
+    )
+    tags = models.ManyToManyField(
+        'Tag',
         blank=True,
         related_name='tasks',
     )

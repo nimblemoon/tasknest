@@ -2,6 +2,7 @@
 {% url 'tasks:board' as board_url %}
 {% url 'tasks:calendar' as calendar_url %}
 {% url 'tasks:insights' as insights_url %}
+{% url 'tasks:tags' as tags_url %}
 {% url 'tasks:projects' as projects_url %}
 <aside class="sidebar" data-sidebar aria-label="Main navigation">
     <div class="sidebar-head">
@@ -38,6 +39,10 @@
         <a class="nav-item {% if request.path == insights_url %}is-active{% endif %}" href="{{ insights_url }}">
             <svg class="icon" aria-hidden="true"><use href="#i-chart"></use></svg>
             <span>Insights</span>
+        </a>
+        <a class="nav-item {% if request.path == tags_url %}is-active{% endif %}" href="{{ tags_url }}">
+            <svg class="icon" aria-hidden="true"><use href="#i-flag"></use></svg>
+            <span>Tags</span>
         </a>
     </nav>
 

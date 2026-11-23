@@ -17,6 +17,10 @@ urlpatterns = [
     path('quick-add/', views.quick_add_view, name='quick_add'),
 
     path('add/', views.AddTaskView.as_view(), name='add_task'),
+    path('tags/', views.tags_view, name='tags'),
+    path('tags/new/', views.tag_create_view, name='tag_create'),
+    path('tags/<int:pk>/edit/', views.tag_edit_view, name='tag_edit'),
+    path('tags/<int:pk>/delete/', views.tag_delete_view, name='tag_delete'),
     path('projects/', views.projects_view, name='projects'),
     path('projects/new/', views.project_create_view, name='project_create'),
     path('projects/<int:pk>/', views.project_detail_view, name='project_detail'),

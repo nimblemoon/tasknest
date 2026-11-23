@@ -23,6 +23,12 @@
                 {{ task.project.label }}
             </a>
             {% endif %}
+            {% for tag in task.tags.all %}
+            <span class="tag-chip" style="--dot: {{ tag.color_hex }}">
+                <span class="tag-dot" style="background: {{ tag.color_hex }}"></span>
+                {{ tag.name }}
+            </span>
+            {% endfor %}
             <span class="meta-item tone-{{ task.due_tone }}">
                 <svg class="icon icon-xs" aria-hidden="true"><use href="#i-clock"></use></svg>
                 {{ task.humanized_due }}
