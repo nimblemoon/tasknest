@@ -11,7 +11,7 @@ from datetime import date, timedelta
 from django.db.models import Case, Count, F, IntegerField, Q, When
 from django.utils import timezone
 
-from .models import Project, Task
+from .models import FocusSession, Project, Task
 
 _PRIORITY_WEIGHT = {'high': 3, 'medium': 2, 'low': 1}
 
@@ -313,6 +313,11 @@ def insights_data(user):
         row['percent'] = round(row['count'] * 100 / priority_total)
 
     stats = dashboard_stats(user)
+    focus_sessions = FocusSession.objects.filter(
+        user=user,
+        ended_at__date__gte=days[0],
+    )
+    focus_minutes = sum(s.duration_minutes for s in focus_sessions)
     return {
         'chart': chart,
         'best_day': best if best['count'] else None,
@@ -322,4 +327,6 @@ def insights_data(user):
         'priority': priority,
         'streak': completion_streak(user),
         'stats': stats,
+        'focus_sessions': focus_sessions.count(),
+        'focus_minutes': focus_minutes,
     }

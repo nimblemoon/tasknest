@@ -18,6 +18,7 @@ urlpatterns = [
     path('data/import/', views.import_view, name='data_import'),
     path('filter/', views.filter_tasks_view, name='filter_tasks'),
     path('quick-add/', views.quick_add_view, name='quick_add'),
+    path('focus-sessions/', views.focus_session_create_view, name='focus_session_create'),
 
     path('add/', views.AddTaskView.as_view(), name='add_task'),
     path('tags/', views.tags_view, name='tags'),

@@ -46,6 +46,14 @@
         </span>
         <span class="stat-hint">{{ stats.due_today }} due today</span>
     </div>
+    <div class="stat-card stat-brand">
+        <span class="stat-icon"><svg class="icon"><use href="#i-sparkle"></use></svg></span>
+        <span class="stat-copy">
+            <span class="stat-value">{{ focus_minutes }}</span>
+            <span class="stat-label">Focus minutes</span>
+        </span>
+        <span class="stat-hint">{{ focus_sessions }} session{{ focus_sessions|pluralize }}</span>
+    </div>
 </section>
 
 <div class="insight-grid">

@@ -394,6 +394,33 @@ class TaskComment(models.Model):
         return f'Comment by {self.author} on {self.task}'
 
 
+class FocusSession(models.Model):
+    """A completed Pomodoro-style focus block."""
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='focus_sessions',
+    )
+    task = models.ForeignKey(
+        Task,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='focus_sessions',
+    )
+    duration_minutes = models.PositiveIntegerField(default=25)
+    started_at = models.DateTimeField()
+    ended_at = models.DateTimeField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-ended_at']
+
+    def __str__(self):
+        return f'{self.duration_minutes}m focus by {self.user}'
+
+
 class Subtask(models.Model):
     """A checklist item inside a task."""
 

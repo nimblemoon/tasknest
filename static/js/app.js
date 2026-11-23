@@ -160,6 +160,19 @@
         running = false;
         clearInterval(interval);
         interval = null;
+        if (!isBreak) {
+          const minutes = Math.round(duration / 60);
+          const csrfToken = (document.cookie.match(/csrftoken=([^;]+)/) || [])[1];
+          fetch('/tasks/focus-sessions/', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-CSRFToken': csrfToken || '',
+            },
+            body: JSON.stringify({ duration_minutes: minutes }),
+            credentials: 'same-origin',
+          }).catch(() => {});
+        }
         // Gentle chime via Web Audio (best effort).
         try {
           const ctx = new (window.AudioContext || window.webkitAudioContext)();

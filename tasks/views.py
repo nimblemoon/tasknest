@@ -9,13 +9,13 @@ over the same tasks. Projects and subtasks add lightweight structure.
 import csv
 import io
 import json
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timedelta
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Max, Q
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
@@ -32,7 +32,7 @@ from .forms import (
     TagForm,
     TaskForm,
 )
-from .models import Project, Subtask, Tag, Task, TaskComment
+from .models import FocusSession, Project, Subtask, Tag, Task, TaskComment
 from .utils import (
     apply_task_filters,
     base_task_queryset,
@@ -715,6 +715,36 @@ def import_view(request):
 
     messages.success(request, f'Imported {imported} task{"s" if imported != 1 else ""}.')
     return redirect('tasks:data')
+
+
+# ---------------------------------------------------------------------------
+# Focus sessions
+# ---------------------------------------------------------------------------
+
+@login_required
+@require_POST
+def focus_session_create_view(request):
+    try:
+        payload = json.loads(request.body or '{}')
+    except json.JSONDecodeError:
+        payload = request.POST
+    duration = int(payload.get('duration_minutes') or payload.get('duration') or 25)
+    if duration < 1:
+        duration = 1
+    task_id = payload.get('task_id') or payload.get('task')
+    task = None
+    if task_id:
+        task = Task.objects.filter(pk=task_id, owner=request.user).first()
+    ended_at = timezone.now()
+    started_at = ended_at - timedelta(minutes=duration)
+    session = FocusSession.objects.create(
+        user=request.user,
+        task=task,
+        duration_minutes=duration,
+        started_at=started_at,
+        ended_at=ended_at,
+    )
+    return JsonResponse({'id': session.pk, 'duration_minutes': session.duration_minutes}, status=201)
 
 
 # ---------------------------------------------------------------------------
