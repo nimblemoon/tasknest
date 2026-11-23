@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Data — TaskNest{% endblock %}
+
+{% block content %}
+<section class="page-head">
+    <div class="page-head-text">
+        <p class="eyebrow">Account</p>
+        <h1>Export &amp; import</h1>
+        <p class="page-sub">Take your tasks with you, or restore from a backup. Exports include projects, tags, tasks, subtasks, and notes.</p>
+    </div>
+</section>
+
+<div class="detail-grid">
+    <div class="detail-main">
+        <section class="panel">
+            <header class="panel-head">
+                <div>
+                    <p class="eyebrow">Export</p>
+                    <h2>Download your data</h2>
+                </div>
+            </header>
+            <p class="muted-text">You have {{ task_count }} task{{ task_count|pluralize }}, {{ project_count }} project{{ project_count|pluralize }}, and {{ tag_count }} tag{{ tag_count|pluralize }}.</p>
+            <div class="btn-row">
+                <a class="btn btn-primary" href="{% url 'tasks:data_export' %}?format=json">
+                    <svg class="icon" aria-hidden="true"><use href="#i-arrow-up-right"></use></svg>
+                    Export JSON
+                </a>
+                <a class="btn btn-secondary" href="{% url 'tasks:data_export' %}?format=csv">
+                    <svg class="icon" aria-hidden="true"><use href="#i-arrow-up-right"></use></svg>
+                    Export CSV (tasks)
+                </a>
+            </div>
+        </section>
+
+        <section class="panel">
+            <header class="panel-head">
+                <div>
+                    <p class="eyebrow">Import</p>
+                    <h2>Restore from JSON</h2>
+                </div>
+            </header>
+            <p class="muted-text">Upload a JSON export created by TaskNest. Projects and tags are matched by name; tasks are always added.</p>
+            <form method="post" action="{% url 'tasks:data_import' %}" enctype="multipart/form-data" class="form-card">
+                {% csrf_token %}
+                <div class="field">
+                    <label for="import-file">JSON file</label>
+                    <input type="file" id="import-file" name="file" accept="application/json,.json" class="form-control" required>
+                </div>
+                <div class="btn-row">
+                    <button type="submit" class="btn btn-primary">
+                        <svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>
+                        Import
+                    </button>
+                </div>
+            </form>
+        </section>
+    </div>
+</div>
+{% endblock %}

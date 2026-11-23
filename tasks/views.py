@@ -6,13 +6,16 @@ The dashboard is the centre of the product: smart views, grouping by deadline
 pressure, and inline actions. Board, calendar and insights are alternate lenses
 over the same tasks. Projects and subtasks add lightweight structure.
 """
+import csv
+import io
+import json
 from datetime import date, datetime, time
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Max, Q
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils import timezone
@@ -540,6 +543,178 @@ def comment_delete_view(request, pk, comment_pk):
     comment.delete()
     messages.info(request, 'Note removed.')
     return redirect('tasks:task_detail', pk=task_id)
+
+
+# ---------------------------------------------------------------------------
+# Data export / import
+# ---------------------------------------------------------------------------
+
+@login_required
+def data_view(request):
+    return render(request, 'data/index.html', {
+        'stats': dashboard_stats(request.user),
+        'task_count': Task.objects.filter(owner=request.user).count(),
+        'project_count': Project.objects.filter(owner=request.user).count(),
+        'tag_count': Tag.objects.filter(owner=request.user).count(),
+    })
+
+
+@login_required
+def export_view(request):
+    fmt = request.GET.get('format', 'json').lower()
+    if fmt == 'csv':
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="tasknest-tasks.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['title', 'description', 'due_date', 'priority', 'is_complete', 'is_pinned', 'project', 'tags'])
+        for task in base_task_queryset(request.user):
+            writer.writerow([
+                task.title,
+                task.description,
+                task.due_date.isoformat() if task.due_date else '',
+                task.priority,
+                task.is_complete,
+                task.is_pinned,
+                task.project.name if task.project else '',
+                ', '.join(t.name for t in task.tags.all()),
+            ])
+        return response
+
+    payload = {
+        'projects': [
+            {'name': p.name, 'code': p.code, 'description': p.description, 'color': p.color, 'is_archived': p.is_archived}
+            for p in Project.objects.filter(owner=request.user)
+        ],
+        'tags': [
+            {'name': t.name, 'color': t.color}
+            for t in Tag.objects.filter(owner=request.user)
+        ],
+        'tasks': [],
+    }
+    for task in base_task_queryset(request.user):
+        payload['tasks'].append({
+            'title': task.title,
+            'description': task.description,
+            'due_date': task.due_date.isoformat() if task.due_date else None,
+            'priority': task.priority,
+            'is_complete': task.is_complete,
+            'is_pinned': task.is_pinned,
+            'recurrence': task.recurrence,
+            'recurrence_interval': task.recurrence_interval,
+            'recurrence_end_date': task.recurrence_end_date.isoformat() if task.recurrence_end_date else None,
+            'project': task.project.name if task.project else None,
+            'tags': [t.name for t in task.tags.all()],
+            'subtasks': [{'title': s.title, 'is_done': s.is_done} for s in task.subtasks.all()],
+            'comments': [{'body': c.body, 'created_at': c.created_at.isoformat()} for c in task.comments.all()],
+        })
+
+    response = HttpResponse(
+        json.dumps(payload, indent=2, default=str),
+        content_type='application/json',
+    )
+    response['Content-Disposition'] = 'attachment; filename="tasknest-export.json"'
+    return response
+
+
+@login_required
+@require_POST
+def import_view(request):
+    uploaded = request.FILES.get('file')
+    if not uploaded:
+        messages.error(request, 'Choose a JSON export file to import.')
+        return redirect('tasks:data')
+    try:
+        raw = uploaded.read().decode('utf-8')
+        data = json.loads(raw)
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        messages.error(request, 'That file is not valid JSON.')
+        return redirect('tasks:data')
+
+    project_map = {}
+    for item in data.get('projects', []):
+        project, _ = Project.objects.get_or_create(
+            owner=request.user,
+            name=item.get('name', 'Imported project'),
+            defaults={
+                'code': item.get('code', ''),
+                'description': item.get('description', ''),
+                'color': item.get('color', Project.Color.EMERALD),
+                'is_archived': item.get('is_archived', False),
+            },
+        )
+        project_map[project.name] = project
+
+    tag_map = {}
+    for item in data.get('tags', []):
+        tag, _ = Tag.objects.get_or_create(
+            owner=request.user,
+            name=item.get('name', 'imported'),
+            defaults={'color': item.get('color', Tag.Color.EMERALD)},
+        )
+        tag_map[tag.name] = tag
+
+    imported = 0
+    for item in data.get('tasks', []):
+        due_date = None
+        if item.get('due_date'):
+            try:
+                due_date = datetime.fromisoformat(item['due_date'])
+                if timezone.is_naive(due_date):
+                    due_date = timezone.make_aware(due_date)
+            except ValueError:
+                due_date = None
+        end_date = None
+        if item.get('recurrence_end_date'):
+            try:
+                end_date = date.fromisoformat(item['recurrence_end_date'])
+            except ValueError:
+                end_date = None
+
+        project = None
+        if item.get('project'):
+            project = project_map.get(item['project'])
+            if project is None:
+                project, _ = Project.objects.get_or_create(
+                    owner=request.user, name=item['project'],
+                )
+                project_map[project.name] = project
+
+        task = Task.objects.create(
+            owner=request.user,
+            project=project,
+            title=item.get('title', 'Imported task')[:200],
+            description=item.get('description', ''),
+            due_date=due_date,
+            priority=item.get('priority', Task.Priority.MEDIUM),
+            is_complete=item.get('is_complete', False),
+            is_pinned=item.get('is_pinned', False),
+            recurrence=item.get('recurrence', 'none'),
+            recurrence_interval=item.get('recurrence_interval', 1) or 1,
+            recurrence_end_date=end_date,
+            completed_at=timezone.now() if item.get('is_complete') else None,
+        )
+        for tag_name in item.get('tags', []):
+            tag = tag_map.get(tag_name)
+            if tag is None:
+                tag, _ = Tag.objects.get_or_create(owner=request.user, name=tag_name)
+                tag_map[tag.name] = tag
+            task.tags.add(tag)
+        for sub in item.get('subtasks', []):
+            Subtask.objects.create(
+                task=task,
+                title=sub.get('title', 'Step')[:200],
+                is_done=sub.get('is_done', False),
+            )
+        for com in item.get('comments', []):
+            TaskComment.objects.create(
+                task=task,
+                author=request.user,
+                body=com.get('body', ''),
+            )
+        imported += 1
+
+    messages.success(request, f'Imported {imported} task{"s" if imported != 1 else ""}.')
+    return redirect('tasks:data')
 
 
 # ---------------------------------------------------------------------------

@@ -13,6 +13,9 @@ urlpatterns = [
     path('board/', views.board_view, name='board'),
     path('calendar/', views.calendar_view, name='calendar'),
     path('insights/', views.insights_view, name='insights'),
+    path('data/', views.data_view, name='data'),
+    path('data/export/', views.export_view, name='data_export'),
+    path('data/import/', views.import_view, name='data_import'),
     path('filter/', views.filter_tasks_view, name='filter_tasks'),
     path('quick-add/', views.quick_add_view, name='quick_add'),
 
