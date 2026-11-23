@@ -191,3 +191,20 @@ class ScreenSmokeTests(TestCase):
         )
         self.assertEqual(response.status_code, 302)
         self.assertTrue(Task.objects.filter(owner=self.user, title='Quick smoke task').exists())
+
+    def test_new_screens_load(self):
+        task = Task.objects.create(owner=self.user, title='Detail task', due_date=timezone.now())
+        for url_name in ('tasks:tags', 'tasks:data'):
+            response = self.client.get(reverse(url_name))
+            self.assertEqual(response.status_code, 200, url_name)
+        response = self.client.get(reverse('tasks:task_detail', args=[task.pk]))
+        self.assertEqual(response.status_code, 200)
+
+    def test_focus_session_endpoint_creates_session(self):
+        response = self.client.post(
+            reverse('tasks:focus_session_create'),
+            data='{"duration_minutes": 25}',
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()['duration_minutes'], 25)
